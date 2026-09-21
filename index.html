@@ -6,7 +6,7 @@
   <title>ZEBU AI — Market Intelligence Agent</title>
   <meta name="description" content="ZEBU AI Market Intelligence Agent — Proactive, market-aware financial companion for Indian equity markets." />
   <link rel="stylesheet" href="css/styles.css" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%237C6FE5'/><text x='6' y='24' font-size='20' font-weight='900' fill='white' font-family='Inter'>Z</text></svg>" />
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
 </head>
 <body>
 
@@ -15,12 +15,9 @@
 ═══════════════════════════════════════════════════════════ -->
 <header id="topbar">
   <!-- Logo -->
-  <div class="topbar-logo">
-    <div class="logo-mark">Z</div>
-    <div>
-      <div class="logo-text">ZEBU</div>
-      <div class="logo-sub">AI Agent</div>
-    </div>
+  <div class="topbar-logo" onclick="App.navigate('home')" style="cursor:pointer" title="ZEBU — Reliable Always">
+    <img src="assets/zebu-logo.svg" alt="ZEBU — Reliable Always" class="official-logo" />
+    <span class="logo-ai-badge">AI AGENT</span>
   </div>
 
   <!-- Live Indices -->
@@ -141,7 +138,7 @@
   <!-- Chat Header -->
   <div class="chat-header">
     <div class="chat-title-block">
-      <div class="chat-avatar">🤖</div>
+      <div class="chat-avatar"><img src="assets/zebu-mark.svg" width="22" height="22" alt="ZEBU" /></div>
       <div>
         <div class="chat-name">ZEBU AI</div>
         <div class="chat-status">
@@ -182,8 +179,12 @@
 
   <!-- Compliance Notice -->
   <div class="compliance-note">
-    ZEBU AI provides informational analysis only. Not SEBI-registered investment advice.
-    Always consult a qualified advisor before investing.
+    <div class="compliance-badges">
+      <img src="assets/sebi-check.svg" alt="SEBI Reg: INZ000273636" class="compliance-badge-img" title="SEBI Registered: INZ000273636" />
+      <img src="assets/iso-logo.svg" alt="ISO 9001:2015" class="compliance-badge-img" title="ISO 9001:2015 Certified" />
+    </div>
+    ZEBU AI provides informational market analysis. Not SEBI-registered advisory.
+    Trade and invest with prudence.
   </div>
 </aside>
 

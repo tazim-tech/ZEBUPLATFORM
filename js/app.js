@@ -316,6 +316,74 @@ const App = {
         </div>
       </div>
 
+      <!-- Official ZEBU Asset Suite (From official zebuetrade.com) -->
+      <div class="section">
+        <div class="card-header mb-12">
+          <span class="card-title">ZEBU Investment Products</span>
+          <span class="view-time">Official ZEBU Suite</span>
+        </div>
+        <div class="official-products-grid">
+          <div class="official-product-card" onclick="App.navigate('research')">
+            <img src="assets/stocks-etfs.png" alt="Stocks & ETFs" class="official-product-img" />
+            <div class="official-product-title">Stocks & ETFs</div>
+            <div class="official-product-desc">Trade 5,000+ listed equities on NSE & BSE with flat brokerage.</div>
+          </div>
+          <div class="official-product-card" onclick="App.chatAsk('Tell me about mutual funds and SIP investing in India')">
+            <img src="assets/mutual-funds.png" alt="Mutual Funds & SIPs" class="official-product-img" />
+            <div class="official-product-title">Mutual Funds & SIPs</div>
+            <div class="official-product-desc">Zero-commission Direct Mutual Funds with automated SIPs.</div>
+          </div>
+          <div class="official-product-card" onclick="App.chatAsk('What are Sovereign Gold Bonds and how do they work?')">
+            <img src="assets/bonds.png" alt="Currencies & Bonds" class="official-product-img" />
+            <div class="official-product-title">Currencies & Bonds</div>
+            <div class="official-product-desc">Sovereign Gold Bonds, Govt Securities, and currency futures.</div>
+          </div>
+          <div class="official-product-card" onclick="App.chatAsk('What upcoming IPOs are open in India right now?')">
+            <img src="assets/ipos.png" alt="IPOs" class="official-product-img" />
+            <div class="official-product-title">IPOs with UPI</div>
+            <div class="official-product-desc">Apply in under 60 seconds with instant UPI mandate blocking.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Official ZEBU Trading Ecosystem -->
+      <div class="section">
+        <div class="card-header mb-12">
+          <span class="card-title">ZEBU Trading Technology</span>
+          <span class="view-time">Powered by ZEBU Core</span>
+        </div>
+        <div class="official-tools-grid">
+          <div class="official-tool-card" onclick="App.chatAsk('How do I use ZEBU Web for chart trading?')">
+            <img src="assets/webtrading.svg" alt="ZEBU Web" class="official-tool-icon" />
+            <div>
+              <div class="official-tool-name">ZEBU Web</div>
+              <div class="official-tool-desc">TradingView charts & Option Chain</div>
+            </div>
+          </div>
+          <div class="official-tool-card" onclick="App.chatAsk('What is ZEBU Desktop terminal?')">
+            <img src="assets/app-desk.svg" alt="ZEBU Desktop" class="official-tool-icon" />
+            <div>
+              <div class="official-tool-name">ZEBU Desktop</div>
+              <div class="official-tool-desc">Multi-monitor pro trading terminal</div>
+            </div>
+          </div>
+          <div class="official-tool-card" onclick="App.chatAsk('How do I build an algo trading strategy with ZEBU Python API?')">
+            <img src="assets/api.svg" alt="ZEBU Python API" class="official-tool-icon" />
+            <div>
+              <div class="official-tool-name">Python Algo API</div>
+              <div class="official-tool-desc">Sub-millisecond order execution</div>
+            </div>
+          </div>
+          <div class="official-tool-card" onclick="App.navigate('portfolio')">
+            <img src="assets/reports.svg" alt="Smart Reports" class="official-tool-icon" />
+            <div>
+              <div class="official-tool-name">Smart Reports</div>
+              <div class="official-tool-desc">Automated Tax P&L & capital gains</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Disclaimer -->
       <div style="padding:12px;background:rgba(247,183,49,0.05);border:1px solid rgba(247,183,49,0.1);border-radius:8px;font-size:10px;color:var(--text-tertiary);line-height:1.6;margin-top:8px">
         ⚠️ <strong style="color:var(--amber)">Disclosure:</strong> Market data and analysis provided by ZEBU AI is for informational and educational purposes only. It does not constitute SEBI-registered investment advice. Always consult a qualified financial advisor before making investment decisions. Data sourced from NSE, BSE, and other public sources. Past performance does not guarantee future results.
@@ -826,6 +894,41 @@ const App = {
           <p>This is a classic example of <strong>macro-driven sector rotation</strong> — money moving out of IT into defensive sectors like Pharma (+1.5% today).</p>
           <br>
           <button class="btn btn-ghost" onclick="App.chatAsk('Explain today\'s IT fall in detail and what it means for long-term investors')">Ask AI for full analysis →</button>
+        </div>
+      </div>
+
+      <!-- Official ZEBU Platform Knowledge Suite -->
+      <div class="section" style="margin-top:20px">
+        <div class="card-title mb-12">ZEBU Platform Tutorials & Tool Mastery</div>
+        <div class="official-tools-grid">
+          <div class="official-tool-card" onclick="App.chatAsk('How do I trade on ZEBU Mobile App?')">
+            <img src="assets/apps.svg" alt="Mobile Trading" class="official-tool-icon" />
+            <div>
+              <div class="official-tool-name">Mobile Trading</div>
+              <div class="official-tool-desc">Navigating watchlists & orders</div>
+            </div>
+          </div>
+          <div class="official-tool-card" onclick="App.chatAsk('How does margin and leverage work on ZEBU?')">
+            <img src="assets/funds.svg" alt="Margin & Funds" class="official-tool-icon" />
+            <div>
+              <div class="official-tool-name">Margin & Leverage</div>
+              <div class="official-tool-desc">SEBI peak margin rules</div>
+            </div>
+          </div>
+          <div class="official-tool-card" onclick="App.chatAsk('Explain how to read my Tax P&L report')">
+            <img src="assets/reports.svg" alt="Tax P&L" class="official-tool-icon" />
+            <div>
+              <div class="official-tool-name">Tax & Capital Gains</div>
+              <div class="official-tool-desc">STCG and LTCG reporting</div>
+            </div>
+          </div>
+          <div class="official-tool-card" onclick="App.chatAsk('Explain Python API integration for automated trading')">
+            <img src="assets/api.svg" alt="Python SDK" class="official-tool-icon" />
+            <div>
+              <div class="official-tool-name">Algorithmic API</div>
+              <div class="official-tool-desc">Python SDK & WebSocket stream</div>
+            </div>
+          </div>
         </div>
       </div>
     `;

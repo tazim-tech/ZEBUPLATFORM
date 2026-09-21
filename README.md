@@ -29,9 +29,24 @@ Then open [http://localhost:8080](http://localhost:8080)
 ## Project Structure
 
 ```
-├── index.html          # App shell
+├── index.html          # App shell with official ZEBU branding
+├── assets/             # Official assets from zebuetrade.com
+│   ├── zebu-logo.svg   # Official ZEBU vector logo & tagline
+│   ├── zebu-mark.svg   # Official ZEBU icon mark
+│   ├── stocks-etfs.png # Official Stocks & ETFs illustration
+│   ├── mutual-funds.png# Official Mutual Funds & SIP illustration
+│   ├── bonds.png       # Official Bonds & Currencies illustration
+│   ├── ipos.png        # Official IPO illustration
+│   ├── webtrading.svg  # ZEBU Web platform icon
+│   ├── app-desk.svg    # ZEBU Desktop terminal icon
+│   ├── api.svg         # ZEBU Python API icon
+│   ├── reports.svg     # ZEBU Smart Reports icon
+│   ├── apps.svg        # ZEBU Mobile apps icon
+│   ├── funds.svg       # ZEBU Instant Funds icon
+│   ├── sebi-check.svg  # Official SEBI Registered Broker badge
+│   └── iso-logo.svg    # Official ISO Certified badge
 ├── css/
-│   └── styles.css      # Full dark fintech design system
+│   └── styles.css      # White mode default design system with Dark mode toggle
 └── js/
     ├── data.js         # Indian market data + portfolio
     ├── charts.js       # SVG chart engine

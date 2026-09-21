@@ -7,11 +7,11 @@
 
 /* ── CSS Custom Properties ─────────────────────────────────── */
 :root, [data-theme="light"] {
-  /* Brand */
-  --zebu-purple: #6254E8;
-  --zebu-purple-light: #5244DE;
-  --zebu-purple-dark: #4336C4;
-  --zebu-glow: rgba(98, 84, 232, 0.16);
+  /* Brand - Official Zebu Royal Blue */
+  --zebu-purple: #0037B7;
+  --zebu-purple-light: #1A54DF;
+  --zebu-purple-dark: #002685;
+  --zebu-glow: rgba(0, 55, 183, 0.16);
 
   /* Market Colors - High contrast on white surfaces */
   --green: #059669;
@@ -49,7 +49,7 @@
   /* Borders */
   --border-1: #E2E8F0;
   --border-2: #CBD5E1;
-  --border-purple: rgba(98, 84, 232, 0.25);
+  --border-purple: rgba(0, 55, 183, 0.22);
 
   /* Topbar */
   --topbar-bg: rgba(255, 255, 255, 0.94);
@@ -76,10 +76,10 @@
 
 [data-theme="dark"] {
   /* Brand */
-  --zebu-purple: #7C6FE5;
-  --zebu-purple-light: #9B8FF0;
-  --zebu-purple-dark: #5A4FBF;
-  --zebu-glow: rgba(124, 111, 229, 0.35);
+  --zebu-purple: #2D6BF5;
+  --zebu-purple-light: #588BFF;
+  --zebu-purple-dark: #194BC7;
+  --zebu-glow: rgba(45, 107, 245, 0.35);
 
   /* Market Colors */
   --green: #00C896;
@@ -117,7 +117,7 @@
   /* Borders */
   --border-1: rgba(255, 255, 255, 0.06);
   --border-2: rgba(255, 255, 255, 0.10);
-  --border-purple: rgba(124, 111, 229, 0.25);
+  --border-purple: rgba(45, 107, 245, 0.25);
 
   /* Topbar */
   --topbar-bg: rgba(10, 10, 20, 0.95);
@@ -166,34 +166,37 @@ a { color: var(--zebu-purple-light); text-decoration: none; }
   gap: 10px;
   flex-shrink: 0;
 }
-.topbar-logo .logo-mark {
-  width: 32px; height: 32px;
-  background: linear-gradient(135deg, var(--zebu-purple), var(--zebu-purple-dark));
-  border-radius: 8px;
+.topbar-logo {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  font-weight: 800;
-  color: #fff;
-  letter-spacing: -1px;
-  box-shadow: 0 0 16px var(--zebu-glow);
+  gap: 12px;
+  flex-shrink: 0;
+  text-decoration: none;
 }
-.topbar-logo .logo-text {
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  background: linear-gradient(135deg, var(--text-primary) 60%, var(--zebu-purple));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+.official-logo {
+  height: 34px;
+  width: auto;
+  display: block;
+  object-fit: contain;
 }
-.topbar-logo .logo-sub {
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 1.5px;
+[data-theme="dark"] .official-logo {
+  filter: brightness(0) invert(1);
+}
+.logo-ai-badge {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  background: rgba(0, 55, 183, 0.08);
   color: var(--zebu-purple);
+  padding: 3px 7px;
+  border-radius: 6px;
+  border: 1px solid var(--border-purple);
   text-transform: uppercase;
-  margin-top: 1px;
+  white-space: nowrap;
+}
+[data-theme="dark"] .logo-ai-badge {
+  background: rgba(45, 107, 245, 0.15);
+  color: var(--zebu-purple-light);
 }
 
 /* Theme Toggle Button */
@@ -1410,8 +1413,115 @@ a { color: var(--zebu-purple-light); text-decoration: none; }
 .toast.info-toast { border-left: 3px solid var(--zebu-purple); }
 
 /* ══════════════════════════════════════════════════════════════
+   OFFICIAL ZEBU ASSETS & PRODUCT SUITE
+══════════════════════════════════════════════════════════════ */
+.official-products-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.official-product-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-lg);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: var(--t-base);
+  box-shadow: var(--card-shadow);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.official-product-card:hover {
+  border-color: var(--border-purple);
+  transform: translateY(-2px);
+  box-shadow: var(--card-shadow-hover);
+}
+.official-product-img {
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+  margin-bottom: 12px;
+  transition: transform 0.2s ease;
+}
+.official-product-card:hover .official-product-img {
+  transform: scale(1.08);
+}
+.official-product-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.official-product-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.official-tools-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.official-tool-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: var(--t-fast);
+  cursor: pointer;
+  box-shadow: var(--card-shadow);
+}
+.official-tool-card:hover {
+  background: var(--surface-1);
+  border-color: var(--border-2);
+  transform: translateY(-1px);
+}
+.official-tool-icon {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.official-tool-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.official-tool-desc {
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.compliance-badges {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+.compliance-badge-img {
+  height: 24px;
+  width: auto;
+  opacity: 0.9;
+  object-fit: contain;
+}
+[data-theme="dark"] .compliance-badge-img {
+  filter: brightness(0) invert(1) opacity(0.85);
+}
+
+/* ══════════════════════════════════════════════════════════════
    RESPONSIVE (minimal — targeting desktop-first)
 ══════════════════════════════════════════════════════════════ */
 @media (max-width: 1200px) {
   :root { --chat-w: 320px; }
 }
+
