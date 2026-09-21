@@ -91,7 +91,7 @@ const Charts = {
 
     return `
       <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="${strokeWidth}"/>
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border-2)" stroke-width="${strokeWidth}"/>
         ${arcs.join("")}
       </svg>`;
   },
@@ -104,7 +104,7 @@ const Charts = {
     const r = size * 0.38;
 
     // 0–30 oversold (green), 30–70 neutral, 70–100 overbought (red)
-    let color = value > 70 ? "#FF4D6D" : value < 30 ? "#00C896" : "#F7B731";
+    let color = value > 70 ? "var(--red)" : value < 30 ? "var(--green)" : "var(--amber)";
     let label = value > 70 ? "Overbought" : value < 30 ? "Oversold" : "Neutral";
 
     // Arc for value
@@ -124,10 +124,10 @@ const Charts = {
 
     return `
       <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-        <path d="M ${x1} ${y1} A ${r} ${r} 0 1 1 ${bx2} ${by2}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="6" stroke-linecap="round"/>
+        <path d="M ${x1} ${y1} A ${r} ${r} 0 1 1 ${bx2} ${by2}" fill="none" stroke="var(--border-2)" stroke-width="6" stroke-linecap="round"/>
         <path d="M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}" fill="none" stroke="${color}" stroke-width="6" stroke-linecap="round"/>
         <text x="${cx}" y="${cy + 4}" text-anchor="middle" fill="${color}" font-size="14" font-weight="700" font-family="Inter, sans-serif">${value}</text>
-        <text x="${cx}" y="${cy + 16}" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="7" font-family="Inter, sans-serif">${label}</text>
+        <text x="${cx}" y="${cy + 16}" text-anchor="middle" fill="var(--text-tertiary)" font-size="7" font-family="Inter, sans-serif">${label}</text>
       </svg>`;
   },
 
@@ -136,16 +136,16 @@ const Charts = {
     const { width = 200, height = 60 } = opts;
     const { value, signal, histogram } = macd;
     const isPos = histogram >= 0;
-    const color = isPos ? "#00C896" : "#FF4D6D";
+    const color = isPos ? "var(--green)" : "var(--red)";
     const barH = Math.min(Math.abs(histogram) * 0.6, height * 0.7);
     const y = isPos ? (height / 2) - barH : height / 2;
 
     return `
       <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-        <line x1="0" y1="${height/2}" x2="${width}" y2="${height/2}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-        <rect x="${width/2 - 20}" y="${y}" width="40" height="${barH}" rx="3" fill="${color}" opacity="0.8"/>
-        <text x="10" y="14" fill="rgba(255,255,255,0.5)" font-size="9" font-family="Inter">MACD: ${value.toFixed(1)}</text>
-        <text x="10" y="26" fill="rgba(255,255,255,0.5)" font-size="9" font-family="Inter">Signal: ${signal.toFixed(1)}</text>
+        <line x1="0" y1="${height/2}" x2="${width}" y2="${height/2}" stroke="var(--border-2)" stroke-width="1"/>
+        <rect x="${width/2 - 20}" y="${y}" width="40" height="${barH}" rx="3" fill="${color}" opacity="0.85"/>
+        <text x="10" y="14" fill="var(--text-tertiary)" font-size="9" font-family="Inter">MACD: ${value.toFixed(1)}</text>
+        <text x="10" y="26" fill="var(--text-tertiary)" font-size="9" font-family="Inter">Signal: ${signal.toFixed(1)}</text>
         <text x="${width-10}" y="14" text-anchor="end" fill="${color}" font-size="9" font-family="Inter">Hist: ${histogram.toFixed(1)}</text>
       </svg>`;
   },
@@ -154,11 +154,11 @@ const Charts = {
   pnlBar(pct, opts = {}) {
     const { width = 80, height = 8 } = opts;
     const isPos = pct >= 0;
-    const color = isPos ? "#00C896" : "#FF4D6D";
+    const color = isPos ? "var(--green)" : "var(--red)";
     const fill = Math.min(Math.abs(pct) * 4, 100);
     return `
-      <div style="width:${width}px;height:${height}px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;">
-        <div style="width:${fill}%;height:100%;background:${color};border-radius:4px;opacity:0.8;transition:width 0.6s ease;"></div>
+      <div style="width:${width}px;height:${height}px;background:var(--surface-2);border-radius:4px;overflow:hidden;">
+        <div style="width:${fill}%;height:100%;background:${color};border-radius:4px;opacity:0.85;transition:width 0.6s ease;"></div>
       </div>`;
   },
 };

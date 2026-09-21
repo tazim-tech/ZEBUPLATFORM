@@ -8,6 +8,7 @@ const App = {
   clockInterval: null,
 
   init() {
+    this.initTheme();
     this.renderTopbarIndices();
     this.renderTicker();
     this.startClock();
@@ -20,6 +21,33 @@ const App = {
     this.initChat();
     this.scheduleMockAlerts();
     this.navigate("home");
+  },
+
+  // ── Theme Management ──────────────────────────────────────
+  initTheme() {
+    const saved = localStorage.getItem("zebu_theme") || "light";
+    this.setTheme(saved, false);
+  },
+
+  setTheme(theme, notify = true) {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("zebu_theme", theme);
+    const btn = document.getElementById("theme-toggle");
+    if (btn) {
+      const isLight = theme === "light";
+      btn.querySelector(".theme-icon").textContent = isLight ? "☀️" : "🌙";
+      btn.querySelector(".theme-label").textContent = isLight ? "Light" : "Dark";
+      btn.setAttribute("title", isLight ? "Switch to Dark Mode" : "Switch to White Mode");
+    }
+    if (notify) {
+      this.showToast(`Switched to ${theme === "light" ? "White" : "Dark"} Mode`, "info-toast");
+    }
+  },
+
+  toggleTheme() {
+    const current = document.documentElement.getAttribute("data-theme") || "light";
+    const next = current === "light" ? "dark" : "light";
+    this.setTheme(next, true);
   },
 
   // ── Navigation ────────────────────────────────────────────
