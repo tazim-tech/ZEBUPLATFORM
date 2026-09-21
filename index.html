@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZEBU AI — Market Intelligence Agent</title>
+  <meta name="description" content="ZEBU AI Market Intelligence Agent — Proactive, market-aware financial companion for Indian equity markets." />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%237C6FE5'/><text x='6' y='24' font-size='20' font-weight='900' fill='white' font-family='Inter'>Z</text></svg>" />
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     TOP BAR
+═══════════════════════════════════════════════════════════ -->
+<header id="topbar">
+  <!-- Logo -->
+  <div class="topbar-logo">
+    <div class="logo-mark">Z</div>
+    <div>
+      <div class="logo-text">ZEBU</div>
+      <div class="logo-sub">AI Agent</div>
+    </div>
+  </div>
+
+  <!-- Live Indices -->
+  <div class="topbar-indices" id="topbar-indices">
+    <!-- Rendered by JS -->
+    <div class="index-pill skeleton" style="width:160px;height:38px"></div>
+    <div class="index-pill skeleton" style="width:160px;height:38px"></div>
+    <div class="index-pill skeleton" style="width:130px;height:38px"></div>
+  </div>
+
+  <!-- Right controls -->
+  <div class="topbar-right">
+    <div class="market-status">
+      <div class="dot"></div>
+      MARKET OPEN
+    </div>
+    <div class="topbar-time" id="clock">09:30:00 IST</div>
+    <div class="topbar-avatar" title="Rahul Sharma">RS</div>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════
+     LIVE TICKER
+═══════════════════════════════════════════════════════════ -->
+<div id="ticker">
+  <div class="ticker-label">LIVE</div>
+  <div class="ticker-scroll-wrapper">
+    <div class="ticker-track">
+      <!-- Rendered by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SIDEBAR NAVIGATION
+═══════════════════════════════════════════════════════════ -->
+<nav id="sidebar">
+  <div class="nav-item active" data-view="home" title="Market Brief">
+    <div class="nav-icon">📊</div>
+    <div class="nav-label">Brief</div>
+  </div>
+  <div class="nav-item" data-view="research" title="Stock Research">
+    <div class="nav-icon">🔍</div>
+    <div class="nav-label">Research</div>
+  </div>
+  <div class="nav-item" data-view="portfolio" title="Portfolio Intelligence">
+    <div class="nav-icon">💼</div>
+    <div class="nav-label">Portfolio</div>
+  </div>
+  <div class="nav-item" data-view="events" title="Market Events & Alerts">
+    <div class="nav-icon">🔔</div>
+    <div class="nav-label">Alerts</div>
+    <div class="nav-badge" id="alerts-badge">2</div>
+  </div>
+
+  <div class="nav-separator"></div>
+
+  <div class="nav-item" data-view="education" title="AI Financial Mentor">
+    <div class="nav-icon">🎓</div>
+    <div class="nav-label">Learn</div>
+  </div>
+
+  <div style="flex:1"></div>
+
+  <div class="nav-item" title="Settings" style="margin-bottom:8px" onclick="App.showToast('Settings coming in V2', 'info-toast')">
+    <div class="nav-icon">⚙️</div>
+    <div class="nav-label">Settings</div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MAIN CONTENT
+═══════════════════════════════════════════════════════════ -->
+<main id="main">
+
+  <!-- HOME / MARKET BRIEF -->
+  <div id="view-home" class="view active">
+    <!-- Rendered by JS -->
+    <div class="skeleton" style="height:160px;border-radius:20px;margin-bottom:20px"></div>
+    <div class="grid-4" style="margin-bottom:14px">
+      <div class="skeleton" style="height:110px;border-radius:12px"></div>
+      <div class="skeleton" style="height:110px;border-radius:12px"></div>
+      <div class="skeleton" style="height:110px;border-radius:12px"></div>
+      <div class="skeleton" style="height:110px;border-radius:12px"></div>
+    </div>
+  </div>
+
+  <!-- STOCK RESEARCH -->
+  <div id="view-research" class="view">
+    <!-- Rendered by JS -->
+  </div>
+
+  <!-- PORTFOLIO -->
+  <div id="view-portfolio" class="view">
+    <!-- Rendered by JS -->
+  </div>
+
+  <!-- EVENTS / ALERTS -->
+  <div id="view-events" class="view">
+    <!-- Rendered by JS -->
+  </div>
+
+  <!-- EDUCATION -->
+  <div id="view-education" class="view">
+    <!-- Rendered by JS -->
+  </div>
+
+</main>
+
+<!-- ═══════════════════════════════════════════════════════════
+     AI CHAT PANEL (Right)
+═══════════════════════════════════════════════════════════ -->
+<aside id="chat-panel">
+  <!-- Chat Header -->
+  <div class="chat-header">
+    <div class="chat-title-block">
+      <div class="chat-avatar">🤖</div>
+      <div>
+        <div class="chat-name">ZEBU AI</div>
+        <div class="chat-status">
+          <div class="dot"></div>
+          Market-aware · Live
+        </div>
+      </div>
+    </div>
+    <div class="chat-actions">
+      <div class="chat-action-btn" title="Clear chat" onclick="document.getElementById('chat-messages').innerHTML='';App.initChat()">🗑</div>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div id="chat-messages">
+    <!-- Rendered by JS -->
+  </div>
+
+  <!-- Quick Suggestions -->
+  <div class="chat-input-area">
+    <div class="chat-suggestions" id="chat-suggestions">
+      <div class="suggestion-pill" onclick="App.chatAsk('What\'s happening in the market today?')">📊 Market brief</div>
+      <div class="suggestion-pill" onclick="App.chatAsk('How is my portfolio doing?')">💼 My portfolio</div>
+      <div class="suggestion-pill" onclick="App.chatAsk('Analyse TCS')">🔍 Analyse TCS</div>
+      <div class="suggestion-pill" onclick="App.chatAsk('What is RSI?')">🎓 What is RSI?</div>
+      <div class="suggestion-pill" onclick="App.chatAsk('What unusual activity happened today?')">🔔 Unusual activity</div>
+    </div>
+
+    <div class="chat-input-row">
+      <textarea
+        id="chat-input"
+        placeholder="Ask about any stock, market event, or concept..."
+        rows="1"
+      ></textarea>
+      <button id="chat-send" title="Send">➤</button>
+    </div>
+  </div>
+
+  <!-- Compliance Notice -->
+  <div class="compliance-note">
+    ZEBU AI provides informational analysis only. Not SEBI-registered investment advice.
+    Always consult a qualified advisor before investing.
+  </div>
+</aside>
+
+<!-- ═══════════════════════════════════════════════════════════
+     TOAST NOTIFICATIONS
+═══════════════════════════════════════════════════════════ -->
+<div id="toast-container"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCRIPTS (load order matters)
+═══════════════════════════════════════════════════════════ -->
+<script src="js/data.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/agents.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
