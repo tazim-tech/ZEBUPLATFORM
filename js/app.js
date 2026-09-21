@@ -142,253 +142,446 @@ const App = {
   },
 
   // ══════════════════════════════════════════════════════════
-  //  HOME / MARKET BRIEF VIEW
+  //  HOME / MARKET BRIEF VIEW (Layered Decision Hub)
   // ══════════════════════════════════════════════════════════
   renderHomeView() {
-    const { MARKET_DATA } = ZEBU_DATA;
+    const { MARKET_DATA, STOCKS } = ZEBU_DATA;
     const { indices, breadth, fiiDii, sectors, keyEvents, morningBriefing, globalMarkets } = MARKET_DATA;
     const el = document.getElementById("view-home");
 
     el.innerHTML = `
-      <!-- AI Morning Brief -->
-      <div class="ai-briefing-banner">
-        <div class="briefing-meta">
-          <div class="ai-badge"><div class="dot"></div> ZEBU AI · MARKET INTELLIGENCE</div>
-          <span style="font-size:10px;color:var(--text-tertiary)">${MARKET_DATA.timestamp}</span>
+      <!-- Executive Decision Hub Directive -->
+      <div class="decision-hub-banner">
+        <div class="decision-hub-top">
+          <div class="decision-regime-badge">
+            <div class="pulse-dot"></div>
+            <span>Regime: Cautiously Bullish (Selective Longs)</span>
+          </div>
+          <span style="font-size:11px;color:var(--text-tertiary);font-family:'JetBrains Mono', monospace">
+            Live Feed: ${MARKET_DATA.timestamp}
+          </span>
         </div>
-        <div class="briefing-headline">${morningBriefing.headline}</div>
-        <div class="briefing-insight">${morningBriefing.keyInsight}</div>
-        <div class="briefing-watchpoints">
-          ${morningBriefing.watchPoints.map(wp => `
-            <div class="watch-point">
-              <span class="wp-icon">${wp.icon}</span>
-              <span>${wp.text}</span>
-            </div>
-          `).join("")}
+
+        <div class="decision-directive-title">${morningBriefing.headline}</div>
+        <div class="decision-directive-sub">${morningBriefing.keyInsight}</div>
+
+        <div class="decision-quick-actions">
+          <button class="decision-pill-btn" onclick="App.navigate('portfolio')">
+            💼 <span>Portfolio Impact</span>
+          </button>
+          <button class="decision-pill-btn" onclick="App.chatAsk('What is the NIFTY Options PCR and Max Pain level for this week expiry?')">
+            📊 <span>NIFTY PCR & Max Pain</span>
+          </button>
+          <button class="decision-pill-btn" onclick="App.renderStockView('HDFCBANK');App.navigate('research')">
+            🔍 <span>HDFC Bank Q2 Setup</span>
+          </button>
+          <button class="decision-pill-btn" onclick="App.chatAsk('Give me a high-probability swing trade setup for today')">
+            ⚡ <span>AI Trade Verdict</span>
+          </button>
         </div>
       </div>
 
-      <!-- Index Cards -->
-      <div class="section">
-        <div class="card-header mb-12">
-          <span class="card-title">Market Indices</span>
-          <span class="view-time">${MARKET_DATA.timestamp}</span>
+      <!-- Layer Selection Tabs (Progressive Disclosure) -->
+      <div class="layer-nav-tabs">
+        <button class="layer-tab-btn active" data-layer="pulse" onclick="App.switchHomeLayer('pulse')">
+          <span>🎯 Market Pulse & Setups</span>
+          <span class="layer-badge">Live</span>
+        </button>
+        <button class="layer-tab-btn" data-layer="flows" onclick="App.switchHomeLayer('flows')">
+          <span>⚖️ Flows & Heatmap</span>
+          <span class="layer-badge">FII/DII</span>
+        </button>
+        <button class="layer-tab-btn" data-layer="triggers" onclick="App.switchHomeLayer('triggers')">
+          <span>🔔 High-Impact Triggers</span>
+          <span class="layer-badge">${keyEvents.length}</span>
+        </button>
+      </div>
+
+      <!-- ════════════════════════════════════════════════════════
+           LAYER 1: MARKET PULSE & SETUPS (DEFAULT)
+      ════════════════════════════════════════════════════════ -->
+      <div id="layer-pulse" class="layer-panel active">
+        <!-- Core 3 Benchmarks Ribbon -->
+        <div class="key-indices-ribbon">
+          <!-- NIFTY 50 -->
+          <div class="key-index-card" onclick="App.chatAsk('Tell me key support and resistance levels for NIFTY 50 today')">
+            <div class="k-idx-top">
+              <span class="k-idx-name">NIFTY 50</span>
+              <span class="k-idx-pivots">S: 24,780 | R: 25,000</span>
+            </div>
+            <div class="k-idx-mid">
+              <span class="k-idx-val">${indices.nifty50.ltp.toLocaleString("en-IN", {minimumFractionDigits: 2})}</span>
+              <span class="k-idx-chg ${indices.nifty50.change >= 0 ? "positive" : "negative"}">${indices.nifty50.change >= 0 ? "▲ +" : "▼ "}${indices.nifty50.change.toFixed(2)} (${indices.nifty50.changePct.toFixed(2)}%)</span>
+            </div>
+            <div style="margin-top:6px">
+              ${Charts.sparkline(indices.nifty50.sparkline, {width: 220, height: 36, color: indices.nifty50.change >= 0 ? "var(--green)" : "var(--red)", fillColor: indices.nifty50.change >= 0 ? "var(--green)" : "var(--red)"})}
+            </div>
+          </div>
+
+          <!-- BANK NIFTY -->
+          <div class="key-index-card" onclick="App.chatAsk('How is Bank Nifty positioned ahead of HDFC Bank results?')">
+            <div class="k-idx-top">
+              <span class="k-idx-name">BANK NIFTY</span>
+              <span class="k-idx-pivots">S: 51,800 | R: 52,500</span>
+            </div>
+            <div class="k-idx-mid">
+              <span class="k-idx-val">${indices.bankNifty.ltp.toLocaleString("en-IN", {minimumFractionDigits: 2})}</span>
+              <span class="k-idx-chg ${indices.bankNifty.change >= 0 ? "positive" : "negative"}">${indices.bankNifty.change >= 0 ? "▲ +" : "▼ "}${indices.bankNifty.change.toFixed(2)} (${indices.bankNifty.changePct.toFixed(2)}%)</span>
+            </div>
+            <div style="margin-top:6px">
+              ${Charts.sparkline(indices.bankNifty.sparkline, {width: 220, height: 36, color: indices.bankNifty.change >= 0 ? "var(--green)" : "var(--red)", fillColor: indices.bankNifty.change >= 0 ? "var(--green)" : "var(--red)"})}
+            </div>
+          </div>
+
+          <!-- INDIA VIX -->
+          <div class="key-index-card" onclick="App.chatAsk('Is India VIX cooling down and what does it mean for option buyers?')">
+            <div class="k-idx-top">
+              <span class="k-idx-name">INDIA VIX (Volatility)</span>
+              <span class="k-idx-pivots">Low Volatility Zone</span>
+            </div>
+            <div class="k-idx-mid">
+              <span class="k-idx-val">${indices.indiaVix.ltp.toFixed(2)}</span>
+              <span class="k-idx-chg ${indices.indiaVix.change <= 0 ? "positive" : "negative"}">${indices.indiaVix.change <= 0 ? "▼ " : "▲ +"}${Math.abs(indices.indiaVix.changePct).toFixed(2)}% (${indices.indiaVix.change <= 0 ? "Favorable" : "Elevated"})</span>
+            </div>
+            <div style="margin-top:6px">
+              ${Charts.sparkline(indices.indiaVix.sparkline, {width: 220, height: 36, color: indices.indiaVix.change <= 0 ? "var(--green)" : "var(--amber)", fillColor: indices.indiaVix.change <= 0 ? "var(--green)" : "var(--amber)"})}
+            </div>
+          </div>
         </div>
-        <div class="grid-4" style="margin-bottom:10px">
-          ${["nifty50","bankNifty","niftyIT","niftyPharma"].map(key => {
-            const idx = indices[key];
-            const pos = idx.changePct >= 0;
-            const color = pos ? "#00C896" : "#FF4D6D";
-            return `
-              <div class="index-card" onclick="App.chatAsk('Tell me about ${idx.symbol} today')">
-                <div class="idx-card-name">${idx.symbol}</div>
-                <div class="idx-card-val">${idx.ltp.toLocaleString("en-IN", {minimumFractionDigits:2})}</div>
-                <div class="idx-card-change ${pos ? "positive" : "negative"}">${pos ? "▲" : "▼"} ${Math.abs(idx.change).toFixed(2)} (${Math.abs(idx.changePct).toFixed(2)}%)</div>
-                <div class="idx-card-sparkline">${Charts.sparkline(idx.sparkline || [idx.ltp], {width:120, height:36, color, fillColor:color, strokeWidth:1.5})}</div>
-              </div>`;
-          }).join("")}
-        </div>
-        <div class="grid-2">
-          ${["midcap150","sensex"].map(key => {
-            const idx = indices[key];
-            const pos = idx.changePct >= 0;
-            const color = pos ? "#00C896" : "#FF4D6D";
-            return `
-              <div class="index-card" onclick="App.chatAsk('What is ${idx.symbol} at today?')">
-                <div style="display:flex;align-items:center;justify-content:space-between">
-                  <div>
-                    <div class="idx-card-name">${idx.symbol}</div>
-                    <div class="idx-card-val" style="font-size:17px">${idx.ltp.toLocaleString("en-IN", {minimumFractionDigits:2})}</div>
-                    <div class="idx-card-change ${pos ? "positive" : "negative"}">${pos ? "▲" : "▼"} ${Math.abs(idx.changePct).toFixed(2)}%</div>
-                  </div>
-                  ${Charts.sparkline(idx.sparkline || [idx.ltp], {width:100, height:40, color, fillColor:color})}
+
+        <!-- Actionable Decision Drivers (Trendlyne Style) -->
+        <div class="section">
+          <div class="card-header mb-12">
+            <span class="card-title">Actionable Decision Drivers</span>
+            <span class="view-time">Market Rationale</span>
+          </div>
+          <div class="decision-drivers-grid">
+            <div class="driver-card" onclick="App.renderStockView('HDFCBANK');App.navigate('research')">
+              <div>
+                <div class="driver-card-header">
+                  <span class="driver-card-icon">🏦</span>
+                  <span class="driver-card-tag">Banking Momentum</span>
                 </div>
-              </div>`;
-          }).join("")}
-        </div>
-      </div>
-
-      <!-- Market Breadth + FII/DII -->
-      <div class="grid-2 section">
-        <!-- Breadth -->
-        <div class="card">
-          <div class="card-title mb-12">Market Breadth (NSE)</div>
-          <div style="display:flex;gap:8px;margin-bottom:12px">
-            <div style="flex:1;padding:10px;background:var(--green-dim);border:1px solid rgba(0,200,150,0.2);border-radius:8px;text-align:center">
-              <div style="font-size:22px;font-weight:800;color:var(--green)">${breadth.advances}</div>
-              <div style="font-size:10px;color:var(--green);margin-top:2px">Advances</div>
-            </div>
-            <div style="flex:1;padding:10px;background:var(--red-dim);border:1px solid rgba(255,77,109,0.2);border-radius:8px;text-align:center">
-              <div style="font-size:22px;font-weight:800;color:var(--red)">${breadth.declines}</div>
-              <div style="font-size:10px;color:var(--red);margin-top:2px">Declines</div>
-            </div>
-            <div style="flex:1;padding:10px;background:var(--surface-1);border:1px solid var(--border-1);border-radius:8px;text-align:center">
-              <div style="font-size:22px;font-weight:800;color:var(--text-secondary)">${breadth.unchanged}</div>
-              <div style="font-size:10px;color:var(--text-tertiary);margin-top:2px">Unchanged</div>
-            </div>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-secondary)">
-            <span>A/D Ratio: <strong style="color:var(--green)">${breadth.ratio.toFixed(2)}</strong></span>
-            <span>52W High: <strong style="color:var(--green)">${breadth.new52wHigh}</strong></span>
-            <span>52W Low: <strong style="color:var(--red)">${breadth.new52wLow}</strong></span>
-          </div>
-        </div>
-
-        <!-- FII/DII -->
-        <div class="card">
-          <div class="card-title mb-12">FII / DII Activity <span style="font-size:10px;color:var(--text-tertiary);font-weight:400">(${fiiDii.date})</span></div>
-          <div class="flow-card">
-            <div>
-              <div class="flow-row">
-                <span class="flow-label">FII Net</span>
-                <span class="flow-val negative">${fiiDii.fii.net >= 0 ? "+" : ""}₹${fiiDii.fii.net.toFixed(0)} Cr</span>
+                <div class="driver-card-title">HDFC Bank Q2 Countdown</div>
+                <div class="driver-card-desc">Banking index (+0.58%) factoring in credit recovery. Trailing stop-loss near ₹1,520 for existing swing longs.</div>
               </div>
-              <div class="flow-bar-wrap"><div class="flow-bar" style="width:${Math.min(Math.abs(fiiDii.fii.net)/50,100)}%;background:var(--red)"></div></div>
-              <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-tertiary);margin-top:3px">
-                <span>Buy: ₹${fiiDii.fii.buy.toFixed(0)} Cr</span>
-                <span>Sell: ₹${fiiDii.fii.sell.toFixed(0)} Cr</span>
+              <div class="driver-card-action">Research HDFCBANK setup →</div>
+            </div>
+
+            <div class="driver-card" onclick="App.chatAsk('Explain why money is rotating from IT to Pharma today and how to trade it')">
+              <div>
+                <div class="driver-card-header">
+                  <span class="driver-card-icon">⚡</span>
+                  <span class="driver-card-tag">Sector Rotation</span>
+                </div>
+                <div class="driver-card-title">IT Weakness → Pharma Rotation</div>
+                <div class="driver-card-desc">US Fed stance weighing on IT (-1.87%). Defensive money moving into Sun Pharma (+1.50%). Avoid fresh IT longs.</div>
+              </div>
+              <div class="driver-card-action">Analyse Sector Rotation →</div>
+            </div>
+
+            <div class="driver-card" onclick="App.switchHomeLayer('flows')">
+              <div>
+                <div class="driver-card-header">
+                  <span class="driver-card-icon">🛡️</span>
+                  <span class="driver-card-tag">Institutional Cushion</span>
+                </div>
+                <div class="driver-card-title">DII Net Buy +₹1,840 Cr Absorbs Dip</div>
+                <div class="driver-card-desc">Domestic funds aggressively buying dips to support Nifty near 24,800 despite FII net selling (-₹1,240 Cr).</div>
+              </div>
+              <div class="driver-card-action">Inspect Money Flows →</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- High-Conviction Setups Table -->
+        <div class="card section">
+          <div class="card-header mb-12">
+            <span class="card-title">High-Conviction Stock Setups</span>
+            <span class="view-time">Technical & Quantitative Screener</span>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="holdings-table">
+              <thead>
+                <tr>
+                  <th>Stock</th>
+                  <th>LTP</th>
+                  <th>Change</th>
+                  <th>Technical Position</th>
+                  <th>Setup Bias</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <div class="h-name">HDFC Bank</div>
+                    <div class="h-sym">NSE: HDFCBANK · Financials</div>
+                  </td>
+                  <td><span class="h-num">₹1,562.40</span></td>
+                  <td><span class="positive">▲ +0.95%</span></td>
+                  <td><span>RSI 61.2 · Above 20 EMA</span></td>
+                  <td><span class="tag tag-green">Bullish Continuation</span></td>
+                  <td><button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="App.renderStockView('HDFCBANK');App.navigate('research')">View Setup</button></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="h-name">Infosys</div>
+                    <div class="h-sym">NSE: INFY · IT Services</div>
+                  </td>
+                  <td><span class="h-num">₹1,478.20</span></td>
+                  <td><span class="negative">▼ -2.14%</span></td>
+                  <td><span>RSI 31.8 · Oversold</span></td>
+                  <td><span class="tag tag-amber">Mean Reversion Watch</span></td>
+                  <td><button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="App.renderStockView('INFY');App.navigate('research')">View Setup</button></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="h-name">Tata Steel</div>
+                    <div class="h-sym">NSE: TATASTEEL · Metals</div>
+                  </td>
+                  <td><span class="h-num">₹158.40</span></td>
+                  <td><span class="positive">▲ +1.18%</span></td>
+                  <td><span>MACD Bullish Cross</span></td>
+                  <td><span class="tag tag-green">Ex-Dividend Value</span></td>
+                  <td><button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="App.renderStockView('TATASTEEL');App.navigate('research')">View Setup</button></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="h-name">Tata Consultancy Services</div>
+                    <div class="h-sym">NSE: TCS · IT Services</div>
+                  </td>
+                  <td><span class="h-num">₹4,120.00</span></td>
+                  <td><span class="negative">▼ -1.87%</span></td>
+                  <td><span>Testing 200 EMA Support</span></td>
+                  <td><span class="tag tag-purple">Long-Term Value</span></td>
+                  <td><button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="App.renderStockView('TCS');App.navigate('research')">View Setup</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════════════════
+           LAYER 2: FLOWS & HEATMAP
+      ════════════════════════════════════════════════════════ -->
+      <div id="layer-flows" class="layer-panel">
+        <div class="grid-2 section">
+          <!-- Market Breadth -->
+          <div class="card">
+            <div class="card-header mb-12">
+              <span class="card-title">Market Breadth (NSE)</span>
+              <span class="view-time">Net Bias: 61.5% Positive</span>
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:14px">
+              <div style="flex:1;padding:12px;background:var(--green-dim);border:1px solid rgba(5,150,105,0.2);border-radius:8px;text-align:center">
+                <div style="font-size:24px;font-weight:800;color:var(--green)">${breadth.advances}</div>
+                <div style="font-size:10px;color:var(--green);font-weight:700;margin-top:2px">ADVANCES</div>
+              </div>
+              <div style="flex:1;padding:12px;background:var(--red-dim);border:1px solid rgba(225,29,72,0.2);border-radius:8px;text-align:center">
+                <div style="font-size:24px;font-weight:800;color:var(--red)">${breadth.declines}</div>
+                <div style="font-size:10px;color:var(--red);font-weight:700;margin-top:2px">DECLINES</div>
+              </div>
+              <div style="flex:1;padding:12px;background:var(--surface-1);border:1px solid var(--border-1);border-radius:8px;text-align:center">
+                <div style="font-size:24px;font-weight:800;color:var(--text-secondary)">${breadth.unchanged}</div>
+                <div style="font-size:10px;color:var(--text-tertiary);margin-top:2px">UNCHANGED</div>
               </div>
             </div>
-            <div class="divider"></div>
-            <div>
-              <div class="flow-row">
-                <span class="flow-label">DII Net</span>
-                <span class="flow-val positive">+₹${fiiDii.dii.net.toFixed(0)} Cr</span>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-secondary);padding-top:8px;border-top:1px solid var(--border-1)">
+              <span>Advance/Decline Ratio: <strong style="color:var(--green)">${breadth.ratio.toFixed(2)}</strong></span>
+              <span>52W Highs: <strong style="color:var(--green)">${breadth.new52wHigh}</strong></span>
+              <span>52W Lows: <strong style="color:var(--red)">${breadth.new52wLow}</strong></span>
+            </div>
+          </div>
+
+          <!-- Institutional Net Activity -->
+          <div class="card">
+            <div class="card-header mb-12">
+              <span class="card-title">Institutional Footprint (FII vs DII)</span>
+              <span class="view-time">${fiiDii.date}</span>
+            </div>
+            <div class="flow-card">
+              <div>
+                <div class="flow-row">
+                  <span class="flow-label">FII Net Sales</span>
+                  <span class="flow-val negative">-₹${Math.abs(fiiDii.fii.net).toFixed(0)} Cr</span>
+                </div>
+                <div class="flow-bar-wrap"><div class="flow-bar" style="width:65%;background:var(--red)"></div></div>
+                <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-tertiary);margin-top:3px">
+                  <span>Gross Buy: ₹${fiiDii.fii.buy.toFixed(0)} Cr</span>
+                  <span>Gross Sell: ₹${fiiDii.fii.sell.toFixed(0)} Cr</span>
+                </div>
               </div>
-              <div class="flow-bar-wrap"><div class="flow-bar" style="width:${Math.min(fiiDii.dii.net/50,100)}%;background:var(--green)"></div></div>
-              <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-tertiary);margin-top:3px">
-                <span>Buy: ₹${fiiDii.dii.buy.toFixed(0)} Cr</span>
-                <span>Sell: ₹${fiiDii.dii.sell.toFixed(0)} Cr</span>
+              <div class="divider"></div>
+              <div>
+                <div class="flow-row">
+                  <span class="flow-label">DII Net Purchases</span>
+                  <span class="flow-val positive">+₹${fiiDii.dii.net.toFixed(0)} Cr</span>
+                </div>
+                <div class="flow-bar-wrap"><div class="flow-bar" style="width:85%;background:var(--green)"></div></div>
+                <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-tertiary);margin-top:3px">
+                  <span>Gross Buy: ₹${fiiDii.dii.buy.toFixed(0)} Cr</span>
+                  <span>Gross Sell: ₹${fiiDii.dii.sell.toFixed(0)} Cr</span>
+                </div>
               </div>
             </div>
-            <div style="padding:8px 10px;background:rgba(247,183,49,0.06);border-radius:6px;font-size:11px;color:var(--amber)">
-              💡 DIIs are buying the dip — often signals institutional confidence in Indian markets at current levels.
-            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Sectors -->
-      <div class="section">
-        <div class="card-title mb-12">Sector Performance</div>
-        <div class="sector-grid">
-          ${sectors.map(s => `
-            <div class="sector-tile ${s.change >= 0 ? "pos" : "neg"}" onclick="App.chatAsk('Tell me about the ${s.name} sector today')">
-              <div class="s-icon">${s.icon}</div>
-              <div class="s-name">${s.name}</div>
-              <div class="s-change ${s.change >= 0 ? "positive" : "negative"}">${s.change >= 0 ? "+" : ""}${s.change.toFixed(2)}%</div>
-            </div>
-          `).join("")}
-        </div>
-      </div>
-
-      <!-- Global Markets -->
-      <div class="section">
-        <div class="card-title mb-12">Global Markets & Commodities</div>
-        <div class="global-strip">
-          ${globalMarkets.map(g => `
-            <div class="global-item">
-              <span class="g-name">${g.name}</span>
-              <span class="g-val">${g.value}</span>
-              <span class="g-chg ${g.change >= 0 ? "positive" : "negative"}">${g.change >= 0 ? "▲" : "▼"} ${Math.abs(g.change).toFixed(2)}%</span>
-            </div>
-          `).join("")}
-        </div>
-      </div>
-
-      <!-- Today's Events -->
-      <div class="section">
-        <div class="card-title mb-12">Today's Key Events</div>
-        <div class="event-strip">
-          ${keyEvents.map(ev => `
-            <div class="event-item" onclick="App.chatAsk('Tell me about ${ev.event}')">
-              <div class="event-time">${ev.time}</div>
-              <div style="margin-right:8px;font-size:14px">
-                ${ev.type === "earnings" ? "📊" : ev.type === "macro" ? "🏛️" : ev.type === "flows" ? "💰" : "🏢"}
+        <!-- Sector Heatmap -->
+        <div class="section">
+          <div class="card-header mb-12">
+            <span class="card-title">Sector Velocity & Rotation</span>
+            <span class="view-time">Click any sector to query AI</span>
+          </div>
+          <div class="sector-grid">
+            ${sectors.map(s => `
+              <div class="sector-tile ${s.change >= 0 ? "pos" : "neg"}" onclick="App.chatAsk('Tell me about the ${s.name} sector today')">
+                <div class="s-icon">${s.icon}</div>
+                <div class="s-name">${s.name}</div>
+                <div class="s-change ${s.change >= 0 ? "positive" : "negative"}">${s.change >= 0 ? "+" : ""}${s.change.toFixed(2)}%</div>
               </div>
-              <div class="event-body">
-                <div class="event-title">${ev.event}</div>
-                <div class="event-detail">${ev.detail}</div>
+            `).join("")}
+          </div>
+        </div>
+
+        <!-- Global Inter-Market Strip -->
+        <div class="section">
+          <div class="card-title mb-12">Global Inter-Market Cues</div>
+          <div class="global-strip">
+            ${globalMarkets.map(g => `
+              <div class="global-item">
+                <span class="g-name">${g.name}</span>
+                <span class="g-val">${g.value}</span>
+                <span class="g-chg ${g.change >= 0 ? "positive" : "negative"}">${g.change >= 0 ? "▲" : "▼"} ${Math.abs(g.change).toFixed(2)}%</span>
               </div>
-              <span class="tag tag-${ev.impact === "high" ? "red" : ev.impact === "medium" ? "amber" : "purple"}">${ev.impact}</span>
-            </div>
-          `).join("")}
-        </div>
-      </div>
-
-      <!-- Official ZEBU Asset Suite (From official zebuetrade.com) -->
-      <div class="section">
-        <div class="card-header mb-12">
-          <span class="card-title">ZEBU Investment Products</span>
-          <span class="view-time">Official ZEBU Suite</span>
-        </div>
-        <div class="official-products-grid">
-          <div class="official-product-card" onclick="App.navigate('research')">
-            <img src="assets/stocks-etfs.png" alt="Stocks & ETFs" class="official-product-img" />
-            <div class="official-product-title">Stocks & ETFs</div>
-            <div class="official-product-desc">Trade 5,000+ listed equities on NSE & BSE with flat brokerage.</div>
-          </div>
-          <div class="official-product-card" onclick="App.chatAsk('Tell me about mutual funds and SIP investing in India')">
-            <img src="assets/mutual-funds.png" alt="Mutual Funds & SIPs" class="official-product-img" />
-            <div class="official-product-title">Mutual Funds & SIPs</div>
-            <div class="official-product-desc">Zero-commission Direct Mutual Funds with automated SIPs.</div>
-          </div>
-          <div class="official-product-card" onclick="App.chatAsk('What are Sovereign Gold Bonds and how do they work?')">
-            <img src="assets/bonds.png" alt="Currencies & Bonds" class="official-product-img" />
-            <div class="official-product-title">Currencies & Bonds</div>
-            <div class="official-product-desc">Sovereign Gold Bonds, Govt Securities, and currency futures.</div>
-          </div>
-          <div class="official-product-card" onclick="App.chatAsk('What upcoming IPOs are open in India right now?')">
-            <img src="assets/ipos.png" alt="IPOs" class="official-product-img" />
-            <div class="official-product-title">IPOs with UPI</div>
-            <div class="official-product-desc">Apply in under 60 seconds with instant UPI mandate blocking.</div>
+            `).join("")}
           </div>
         </div>
       </div>
 
-      <!-- Official ZEBU Trading Ecosystem -->
-      <div class="section">
-        <div class="card-header mb-12">
-          <span class="card-title">ZEBU Trading Technology</span>
-          <span class="view-time">Powered by ZEBU Core</span>
-        </div>
-        <div class="official-tools-grid">
-          <div class="official-tool-card" onclick="App.chatAsk('How do I use ZEBU Web for chart trading?')">
-            <img src="assets/webtrading.svg" alt="ZEBU Web" class="official-tool-icon" />
-            <div>
-              <div class="official-tool-name">ZEBU Web</div>
-              <div class="official-tool-desc">TradingView charts & Option Chain</div>
-            </div>
+      <!-- ════════════════════════════════════════════════════════
+           LAYER 3: HIGH-IMPACT TRIGGERS
+      ════════════════════════════════════════════════════════ -->
+      <div id="layer-triggers" class="layer-panel">
+        <div class="section">
+          <div class="card-header mb-12">
+            <span class="card-title">Catalyst Timeline & Market Impact</span>
+            <span class="view-time">Filtered by Trade Significance</span>
           </div>
-          <div class="official-tool-card" onclick="App.chatAsk('What is ZEBU Desktop terminal?')">
-            <img src="assets/app-desk.svg" alt="ZEBU Desktop" class="official-tool-icon" />
-            <div>
-              <div class="official-tool-name">ZEBU Desktop</div>
-              <div class="official-tool-desc">Multi-monitor pro trading terminal</div>
-            </div>
-          </div>
-          <div class="official-tool-card" onclick="App.chatAsk('How do I build an algo trading strategy with ZEBU Python API?')">
-            <img src="assets/api.svg" alt="ZEBU Python API" class="official-tool-icon" />
-            <div>
-              <div class="official-tool-name">Python Algo API</div>
-              <div class="official-tool-desc">Sub-millisecond order execution</div>
-            </div>
-          </div>
-          <div class="official-tool-card" onclick="App.navigate('portfolio')">
-            <img src="assets/reports.svg" alt="Smart Reports" class="official-tool-icon" />
-            <div>
-              <div class="official-tool-name">Smart Reports</div>
-              <div class="official-tool-desc">Automated Tax P&L & capital gains</div>
-            </div>
+          <div class="event-strip">
+            ${keyEvents.map(ev => `
+              <div class="event-item" onclick="App.chatAsk('How does ${ev.event} impact Indian stock markets and my holdings?')">
+                <div class="event-time">${ev.time}</div>
+                <div style="margin-right:8px;font-size:14px">
+                  ${ev.type === "earnings" ? "📊" : ev.type === "macro" ? "🏛️" : ev.type === "flows" ? "💰" : "🏢"}
+                </div>
+                <div class="event-body">
+                  <div class="event-title">${ev.event}</div>
+                  <div class="event-detail">${ev.detail}</div>
+                </div>
+                <span class="tag tag-${ev.impact === "high" ? "red" : ev.impact === "medium" ? "amber" : "purple"}">${ev.impact}</span>
+              </div>
+            `).join("")}
           </div>
         </div>
       </div>
 
-      <!-- Disclaimer -->
-      <div style="padding:12px;background:rgba(247,183,49,0.05);border:1px solid rgba(247,183,49,0.1);border-radius:8px;font-size:10px;color:var(--text-tertiary);line-height:1.6;margin-top:8px">
-        ⚠️ <strong style="color:var(--amber)">Disclosure:</strong> Market data and analysis provided by ZEBU AI is for informational and educational purposes only. It does not constitute SEBI-registered investment advice. Always consult a qualified financial advisor before making investment decisions. Data sourced from NSE, BSE, and other public sources. Past performance does not guarantee future results.
+      <!-- Layer 4: Collapsible Official ZEBU Suite & Trust Badges -->
+      <div class="ecosystem-collapsible" id="ecosystem-drawer">
+        <div class="ecosystem-header" onclick="App.toggleEcosystemDrawer()">
+          <div class="ecosystem-header-left">
+            <img src="assets/zebu-logo.svg" alt="ZEBU" height="22" />
+            <span class="ecosystem-title">Official ZEBU Product Suite & Registered Broker Credentials</span>
+          </div>
+          <span class="ecosystem-toggle-icon">▼</span>
+        </div>
+        <div class="ecosystem-body">
+          <div class="official-products-grid" style="margin-bottom:16px">
+            <div class="official-product-card" onclick="App.navigate('research')">
+              <img src="assets/stocks-etfs.png" alt="Stocks & ETFs" class="official-product-img" />
+              <div class="official-product-title">Stocks & ETFs</div>
+              <div class="official-product-desc">Trade 5,000+ listed equities on NSE & BSE with flat brokerage.</div>
+            </div>
+            <div class="official-product-card" onclick="App.chatAsk('Tell me about mutual funds and SIP investing in India')">
+              <img src="assets/mutual-funds.png" alt="Mutual Funds & SIPs" class="official-product-img" />
+              <div class="official-product-title">Mutual Funds & SIPs</div>
+              <div class="official-product-desc">Zero-commission Direct Mutual Funds with automated SIPs.</div>
+            </div>
+            <div class="official-product-card" onclick="App.chatAsk('What are Sovereign Gold Bonds and how do they work?')">
+              <img src="assets/bonds.png" alt="Currencies & Bonds" class="official-product-img" />
+              <div class="official-product-title">Currencies & Bonds</div>
+              <div class="official-product-desc">Sovereign Gold Bonds, Govt Securities, and currency futures.</div>
+            </div>
+            <div class="official-product-card" onclick="App.chatAsk('What upcoming IPOs are open in India right now?')">
+              <img src="assets/ipos.png" alt="IPOs" class="official-product-img" />
+              <div class="official-product-title">IPOs with UPI</div>
+              <div class="official-product-desc">Apply in under 60 seconds with instant UPI mandate blocking.</div>
+            </div>
+          </div>
+
+          <div class="official-tools-grid" style="margin-bottom:16px">
+            <div class="official-tool-card" onclick="App.chatAsk('How do I use ZEBU Web for chart trading?')">
+              <img src="assets/webtrading.svg" alt="ZEBU Web" class="official-tool-icon" />
+              <div>
+                <div class="official-tool-name">ZEBU Web</div>
+                <div class="official-tool-desc">TradingView charts & Option Chain</div>
+              </div>
+            </div>
+            <div class="official-tool-card" onclick="App.chatAsk('What is ZEBU Desktop terminal?')">
+              <img src="assets/app-desk.svg" alt="ZEBU Desktop" class="official-tool-icon" />
+              <div>
+                <div class="official-tool-name">ZEBU Desktop</div>
+                <div class="official-tool-desc">Multi-monitor pro trading terminal</div>
+              </div>
+            </div>
+            <div class="official-tool-card" onclick="App.chatAsk('How do I build an algo trading strategy with ZEBU Python API?')">
+              <img src="assets/api.svg" alt="ZEBU Python API" class="official-tool-icon" />
+              <div>
+                <div class="official-tool-name">Python Algo API</div>
+                <div class="official-tool-desc">Sub-millisecond order execution</div>
+              </div>
+            </div>
+            <div class="official-tool-card" onclick="App.navigate('portfolio')">
+              <img src="assets/reports.svg" alt="Smart Reports" class="official-tool-icon" />
+              <div>
+                <div class="official-tool-name">Smart Reports</div>
+                <div class="official-tool-desc">Automated Tax P&L & capital gains</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid var(--border-1);flex-wrap:wrap;gap:10px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <img src="assets/sebi-check.svg" alt="SEBI Reg" height="22" />
+              <img src="assets/iso-logo.svg" alt="ISO 9001:2015" height="22" />
+              <span style="font-size:10px;color:var(--text-tertiary)">SEBI Registration: INZ000273636 · Member NSE/BSE/MCX</span>
+            </div>
+            <span style="font-size:10px;color:var(--text-tertiary)">Zebu Share and Wealth Managements Pvt. Ltd.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Regulatory Disclosure -->
+      <div style="padding:10px 14px;background:var(--surface-1);border:1px solid var(--border-1);border-radius:8px;font-size:10px;color:var(--text-tertiary);line-height:1.5;margin-top:10px">
+        ⚠️ <strong>Regulatory Disclosure:</strong> ZEBU AI is an informational analysis companion for traders and investors. Not SEBI-registered investment advisory. Market investments are subject to market risks.
       </div>
     `;
+  },
+
+  switchHomeLayer(layerId) {
+    document.querySelectorAll(".layer-tab-btn").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.layer === layerId);
+    });
+    document.querySelectorAll(".layer-panel").forEach(panel => {
+      panel.classList.toggle("active", panel.id === `layer-${layerId}`);
+    });
+  },
+
+  toggleEcosystemDrawer() {
+    const el = document.getElementById("ecosystem-drawer");
+    if (el) el.classList.toggle("open");
   },
 
   // ══════════════════════════════════════════════════════════

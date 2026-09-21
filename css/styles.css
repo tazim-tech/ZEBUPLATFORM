@@ -544,82 +544,325 @@ a { color: var(--zebu-purple-light); text-decoration: none; }
    HOME / MARKET BRIEF VIEW
 ══════════════════════════════════════════════════════════════ */
 
-/* AI Briefing Banner */
-.ai-briefing-banner {
-  background: linear-gradient(135deg, rgba(124,111,229,0.15) 0%, rgba(78,205,196,0.08) 100%);
-  border: 1px solid rgba(124,111,229,0.25);
+/* ══════════════════════════════════════════════════════════════
+   DECLUTTERED & LAYERED HOME ARCHITECTURE
+══════════════════════════════════════════════════════════════ */
+
+/* Executive Decision Directive Banner */
+.decision-hub-banner {
+  background: var(--bg-card);
+  border: 1px solid var(--border-1);
   border-radius: var(--r-xl);
   padding: 22px 24px;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
+  box-shadow: var(--card-shadow);
   position: relative;
   overflow: hidden;
 }
-.ai-briefing-banner::before {
-  content: '';
-  position: absolute;
-  top: -50px; right: -50px;
-  width: 200px; height: 200px;
-  background: radial-gradient(circle, rgba(124,111,229,0.15) 0%, transparent 70%);
-  pointer-events: none;
+.decision-hub-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 10px;
 }
-.briefing-meta {
+.decision-regime-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  background: var(--green-dim);
+  color: var(--green);
+  border: 1px solid rgba(5, 150, 105, 0.2);
+}
+.decision-regime-badge .pulse-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: pulse-green 2s infinite;
+}
+.decision-directive-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+.decision-directive-sub {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 16px;
+  max-width: 900px;
+}
+.decision-quick-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.decision-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-2);
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--t-fast);
+}
+.decision-pill-btn:hover {
+  background: var(--surface-2);
+  border-color: var(--zebu-purple);
+  color: var(--zebu-purple);
+  transform: translateY(-1px);
+}
+
+/* Layer Navigation Tabs (Sub-Navigation inside Home) */
+.layer-nav-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-1);
+  border-radius: 30px;
+  margin-bottom: 20px;
+  width: fit-content;
+}
+.layer-tab-btn {
+  padding: 8px 18px;
+  border-radius: 24px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: var(--t-fast);
+}
+.layer-tab-btn:hover {
+  color: var(--text-primary);
+}
+.layer-tab-btn.active {
+  background: var(--bg-card);
+  color: var(--zebu-purple);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  font-weight: 700;
+}
+.layer-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--text-tertiary);
+}
+.layer-tab-btn.active .layer-badge {
+  background: rgba(0, 55, 183, 0.1);
+  color: var(--zebu-purple);
+}
+
+/* Layer Panels */
+.layer-panel {
+  display: none;
+  animation: fadeSlide 0.25s ease;
+}
+.layer-panel.active {
+  display: block;
+}
+
+/* Focused 3-Index Ribbon (Clean, not cluttered) */
+.key-indices-ribbon {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.key-index-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-lg);
+  padding: 18px;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: var(--t-base);
+}
+.key-index-card:hover {
+  border-color: var(--border-2);
+  transform: translateY(-2px);
+  box-shadow: var(--card-shadow-hover);
+}
+.k-idx-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.k-idx-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.k-idx-pivots {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  font-family: 'JetBrains Mono', monospace;
+}
+.k-idx-mid {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.k-idx-val {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.k-idx-chg {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Driver Cards (Actionable Insights) */
+.decision-drivers-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.driver-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-lg);
+  padding: 18px;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: var(--t-base);
+}
+.driver-card:hover {
+  border-color: var(--border-purple);
+  transform: translateY(-2px);
+  box-shadow: var(--card-shadow-hover);
+}
+.driver-card-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
-.ai-badge {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 10px;
-  background: rgba(124,111,229,0.2);
-  border: 1px solid rgba(124,111,229,0.3);
-  border-radius: 20px;
-  font-size: 9px;
+.driver-card-icon {
+  font-size: 18px;
+}
+.driver-card-tag {
+  font-size: 10px;
   font-weight: 700;
-  color: var(--zebu-purple-light);
-  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--zebu-purple);
+  letter-spacing: 0.5px;
 }
-.ai-badge .dot {
-  width: 5px; height: 5px;
-  background: var(--zebu-purple-light);
-  border-radius: 50%;
-  animation: pulse-purple 2s infinite;
-}
-@keyframes pulse-purple {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-.briefing-headline {
-  font-size: 16px;
+.driver-card-title {
+  font-size: 14px;
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 6px;
   line-height: 1.4;
 }
-.briefing-insight {
+.driver-card-desc {
   font-size: 12px;
   color: var(--text-secondary);
-  line-height: 1.6;
-  margin-bottom: 14px;
+  line-height: 1.5;
+  margin-bottom: 12px;
 }
-.briefing-watchpoints {
+.driver-card-action {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--zebu-purple);
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  gap: 4px;
 }
-.watch-point {
+
+/* Collapsible Bottom Drawer for Official ZEBU Suite */
+.ecosystem-collapsible {
+  background: var(--bg-card);
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
+  margin-top: 24px;
+  margin-bottom: 20px;
+}
+.ecosystem-header {
+  padding: 14px 20px;
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--text-secondary);
-  padding: 6px 10px;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
   background: var(--surface-1);
-  border-radius: var(--r-sm);
+  transition: var(--t-fast);
 }
-.watch-point .wp-icon { flex-shrink: 0; }
+.ecosystem-header:hover {
+  background: var(--surface-2);
+}
+.ecosystem-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ecosystem-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.ecosystem-toggle-icon {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  transition: transform 0.2s ease;
+}
+.ecosystem-collapsible.open .ecosystem-toggle-icon {
+  transform: rotate(180deg);
+}
+.ecosystem-body {
+  display: none;
+  padding: 20px;
+  border-top: 1px solid var(--border-1);
+}
+.ecosystem-collapsible.open .ecosystem-body {
+  display: block;
+}
+
+/* Legacy Briefing Banner fallback */
+.ai-briefing-banner {
+  background: var(--bg-card);
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-xl);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  box-shadow: var(--card-shadow);
+}
 
 /* Index Cards */
 .index-card {
