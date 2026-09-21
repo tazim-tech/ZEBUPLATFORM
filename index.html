@@ -35,6 +35,11 @@
       MARKET OPEN
     </div>
     <div class="topbar-time" id="clock">09:30:00 IST</div>
+    <button id="topbar-chat-toggle" class="chat-toggle-pill active" title="Hide AI Assistant (Ctrl+J)" onclick="App.toggleChat()">
+      <img src="assets/zebu-mark.svg" width="13" height="13" alt="AI" />
+      <span class="chat-pill-text">AI Agent</span>
+      <span class="chat-pill-dot"></span>
+    </button>
     <button id="theme-toggle" class="theme-toggle-btn" title="Toggle Light / Dark mode" onclick="App.toggleTheme()">
       <span class="theme-icon">☀️</span>
       <span class="theme-label">Light</span>
@@ -148,7 +153,8 @@
       </div>
     </div>
     <div class="chat-actions">
-      <div class="chat-action-btn" title="Clear chat" onclick="document.getElementById('chat-messages').innerHTML='';App.initChat()">🗑</div>
+      <button class="chat-action-btn" title="Clear chat" onclick="document.getElementById('chat-messages').innerHTML='';App.initChat()">🗑</button>
+      <button class="chat-action-btn" id="chat-hide-btn" title="Hide AI Assistant (Ctrl+J)" onclick="App.toggleChat()">✕</button>
     </div>
   </div>
 
@@ -187,6 +193,16 @@
     Trade and invest with prudence.
   </div>
 </aside>
+
+<!-- ═══════════════════════════════════════════════════════════
+     FLOATING AI TRIGGER (Visible when AI panel is hidden)
+═══════════════════════════════════════════════════════════ -->
+<button id="chat-fab-toggle" class="chat-fab-btn" onclick="App.toggleChat()" title="Open ZEBU AI Assistant (Ctrl+J)">
+  <img src="assets/zebu-mark.svg" width="20" height="20" alt="ZEBU AI" />
+  <span class="fab-text">Ask ZEBU AI</span>
+  <span class="fab-badge">LIVE</span>
+  <span class="fab-dot"></span>
+</button>
 
 <!-- ═══════════════════════════════════════════════════════════
      TOAST NOTIFICATIONS

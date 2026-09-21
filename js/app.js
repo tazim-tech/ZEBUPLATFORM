@@ -9,6 +9,7 @@ const App = {
 
   init() {
     this.initTheme();
+    this.initChatToggle();
     this.renderTopbarIndices();
     this.renderTicker();
     this.startClock();
@@ -48,6 +49,57 @@ const App = {
     const current = document.documentElement.getAttribute("data-theme") || "light";
     const next = current === "light" ? "dark" : "light";
     this.setTheme(next, true);
+  },
+
+  // ── Chat Panel Visibility Toggle (Hideable AI) ───────────
+  initChatToggle() {
+    const isHidden = localStorage.getItem("zebu_chat_hidden") === "true";
+    this.setChatVisible(!isHidden, false);
+
+    // Keyboard shortcut: Ctrl+J or Cmd+J
+    window.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "j") {
+        e.preventDefault();
+        this.toggleChat();
+      }
+    });
+  },
+
+  isChatVisible() {
+    return !document.body.classList.contains("chat-hidden");
+  },
+
+  toggleChat() {
+    this.setChatVisible(!this.isChatVisible(), true);
+  },
+
+  showChat(notify = false) {
+    this.setChatVisible(true, notify);
+  },
+
+  hideChat(notify = false) {
+    this.setChatVisible(false, notify);
+  },
+
+  setChatVisible(visible, notify = false) {
+    if (visible) {
+      document.body.classList.remove("chat-hidden");
+      localStorage.setItem("zebu_chat_hidden", "false");
+    } else {
+      document.body.classList.add("chat-hidden");
+      localStorage.setItem("zebu_chat_hidden", "true");
+    }
+
+    // Update topbar pill state
+    const topbarBtn = document.getElementById("topbar-chat-toggle");
+    if (topbarBtn) {
+      topbarBtn.classList.toggle("active", visible);
+      topbarBtn.setAttribute("title", visible ? "Hide AI Assistant (Ctrl+J)" : "Show AI Assistant (Ctrl+J)");
+    }
+
+    if (notify) {
+      this.showToast(visible ? "AI Assistant visible" : "AI Assistant hidden (Click Ask AI or press Ctrl+J to open)", "info-toast");
+    }
   },
 
   // ── Navigation ────────────────────────────────────────────
@@ -1161,6 +1213,7 @@ Ask me anything, or click any card to explore.`,
   },
 
   chatAsk(query) {
+    this.showChat();
     const input = document.getElementById("chat-input");
     if (input) {
       input.value = query;

@@ -429,6 +429,11 @@ a { color: var(--zebu-purple-light); text-decoration: none; }
   bottom: 0;
   overflow-y: auto;
   background: var(--bg-0);
+  transition: right 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.chat-hidden #main {
+  right: 0;
 }
 
 .view {
@@ -1306,7 +1311,7 @@ a { color: var(--zebu-purple-light); text-decoration: none; }
 .level-advanced { background: var(--red-dim); color: var(--red); }
 
 /* ══════════════════════════════════════════════════════════════
-   AI CHAT PANEL
+   AI CHAT PANEL (Hideable / Collapsible)
 ══════════════════════════════════════════════════════════════ */
 #chat-panel {
   position: fixed;
@@ -1319,6 +1324,107 @@ a { color: var(--zebu-purple-light); text-decoration: none; }
   display: flex;
   flex-direction: column;
   z-index: 90;
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.04);
+}
+
+body.chat-hidden #chat-panel {
+  transform: translateX(100%);
+  pointer-events: none;
+}
+
+/* ── Topbar Chat Toggle Pill ───────────────────────────────── */
+.chat-toggle-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border-1);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--t-fast);
+}
+.chat-toggle-pill:hover {
+  background: var(--surface-2);
+  border-color: var(--border-purple);
+  color: var(--text-primary);
+}
+.chat-toggle-pill.active {
+  background: var(--zebu-glow);
+  border-color: var(--border-purple);
+  color: var(--zebu-purple);
+}
+.chat-pill-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+}
+.chat-toggle-pill:not(.active) .chat-pill-dot {
+  background: var(--text-muted);
+}
+
+/* ── Floating AI Trigger (Visible when AI is hidden) ──────── */
+.chat-fab-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 28px;
+  height: 46px;
+  padding: 0 16px 0 12px;
+  background: var(--bg-1);
+  border: 1.5px solid var(--border-purple);
+  border-radius: 24px;
+  box-shadow: 0 8px 24px rgba(0, 55, 183, 0.18), 0 2px 8px rgba(15, 23, 42, 0.08);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+  z-index: 95;
+  font-family: 'Inter', sans-serif;
+  opacity: 0;
+  transform: translateY(16px) scale(0.92);
+  pointer-events: none;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease, box-shadow 0.2s ease;
+}
+
+body.chat-hidden .chat-fab-btn {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.chat-fab-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 12px 28px rgba(0, 55, 183, 0.28), 0 4px 12px rgba(15, 23, 42, 0.12);
+  border-color: var(--zebu-purple);
+}
+
+.chat-fab-btn .fab-text {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.2px;
+}
+
+.chat-fab-btn .fab-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: var(--zebu-purple);
+  color: #FFFFFF;
+  letter-spacing: 0.5px;
+}
+
+.chat-fab-btn .fab-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse-green 2s infinite;
 }
 
 .chat-header {
@@ -1359,8 +1465,20 @@ a { color: var(--zebu-purple-light); text-decoration: none; }
   cursor: pointer;
   font-size: 13px;
   transition: var(--t-fast);
+  color: var(--text-secondary);
 }
-.chat-action-btn:hover { background: var(--surface-3); }
+.chat-action-btn:hover { background: var(--surface-3); color: var(--text-primary); }
+
+#chat-hide-btn {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+}
+#chat-hide-btn:hover {
+  color: var(--red);
+  background: var(--red-dim);
+  border-color: rgba(225, 29, 72, 0.2);
+}
 
 /* Chat messages */
 #chat-messages {
@@ -1766,5 +1884,10 @@ a { color: var(--zebu-purple-light); text-decoration: none; }
 ══════════════════════════════════════════════════════════════ */
 @media (max-width: 1200px) {
   :root { --chat-w: 320px; }
+}
+
+[data-theme="dark"] .chat-fab-btn {
+  background: var(--bg-2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 15px rgba(45, 107, 245, 0.25);
 }
 
