@@ -10,10 +10,12 @@ const App = {
   _sidebarCollapsed: false,
   _navHidden: false,
   _agentFocus: false,
+  _agentHidden: false,
 
   init() {
     this.initTheme();
     this.initNavState();
+    this.initAgentState();
     this.initShortcuts();
     this.renderTopbarIndices();
     this.renderTicker();
@@ -77,6 +79,61 @@ const App = {
     this.applyNavState(true);
   },
 
+  // ── Agent Panel Visibility Toggle (Hideable Agent in Side) ──
+  initAgentState() {
+    const saved = localStorage.getItem("zebu_agent_hidden");
+    this._agentHidden = saved === "true";
+    this.applyAgentState(false);
+  },
+
+  applyAgentState(notify = false) {
+    const shell = document.getElementById("app-shell");
+    const topBtn = document.getElementById("topbar-agent-toggle");
+    const hideBtn = document.getElementById("agent-hide-btn");
+
+    if (shell) shell.classList.toggle("agent-hidden", this._agentHidden);
+    document.body.classList.toggle("agent-hidden", this._agentHidden);
+
+    if (topBtn) {
+      topBtn.classList.toggle("active", !this._agentHidden);
+      const text = topBtn.querySelector(".agent-pill-text");
+      if (text) text.textContent = this._agentHidden ? "Show Agent" : "Agent";
+      topBtn.title = this._agentHidden ? "Show ZEBU AI Agent (Alt+A)" : "Hide Agent to Side (Alt+A)";
+    }
+
+    if (hideBtn) {
+      hideBtn.title = this._agentHidden ? "Restore Agent (Alt+A)" : "Hide Agent to Side (Alt+A)";
+    }
+
+    localStorage.setItem("zebu_agent_hidden", this._agentHidden);
+
+    if (notify) {
+      this.showToast(
+        this._agentHidden ? "Agent hidden to side · Press Alt+A to restore" : "ZEBU AI Agent restored",
+        "info-toast"
+      );
+    }
+  },
+
+  toggleAgent() {
+    this._agentHidden = !this._agentHidden;
+    this.applyAgentState(true);
+  },
+
+  showAgent(notify = false) {
+    if (this._agentHidden) {
+      this._agentHidden = false;
+      this.applyAgentState(notify);
+    }
+  },
+
+  hideAgent(notify = false) {
+    if (!this._agentHidden) {
+      this._agentHidden = true;
+      this.applyAgentState(notify);
+    }
+  },
+
   toggleAgentFocus() {
     this._agentFocus = !this._agentFocus;
     document.getElementById("app-shell")?.classList.toggle("agent-focus", this._agentFocus);
@@ -96,8 +153,38 @@ const App = {
       } else if (e.altKey && e.key.toLowerCase() === "f") {
         e.preventDefault();
         this.toggleAgentFocus();
+      } else if ((e.altKey && e.key.toLowerCase() === "a") || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "j")) {
+        e.preventDefault();
+        this.toggleAgent();
       }
     });
+  },
+
+  // ── Real Stock Logos & Imagery ────────────────────────────
+  getStockLogo(symbol, size = 28, className = "stock-logo-img") {
+    const s = (symbol || "").toUpperCase();
+    const map = {
+      TCS: "assets/stocks/tcs.svg",
+      HDFCBANK: "assets/stocks/hdfcbank.svg",
+      HDFC: "assets/stocks/hdfcbank.svg",
+      RELIANCE: "assets/stocks/reliance.svg",
+      RIL: "assets/stocks/reliance.svg",
+      TATAMOTORS: "assets/stocks/tatamotors.svg",
+      TATASTEEL: "assets/stocks/tatasteel.svg",
+      INFY: "assets/stocks/infy.svg",
+      INFOSYS: "assets/stocks/infy.svg",
+      IRCTC: "assets/stocks/irctc.svg",
+      GOLDBEES: "assets/stocks/goldbees.svg",
+      GOLD: "assets/stocks/goldbees.svg",
+      IOC: "assets/stocks/ioc.svg",
+      TRIDENT: "assets/stocks/trident.svg",
+      IDFC: "assets/stocks/idfc.svg",
+      NIFTY50: "assets/stocks/nifty50.svg",
+      NIFTY: "assets/stocks/nifty50.svg",
+      BANKNIFTY: "assets/stocks/banknifty.svg",
+    };
+    const src = map[s] || "assets/stocks/default.svg";
+    return `<img src="${src}" alt="${s}" class="${className}" width="${size}" height="${size}" loading="lazy" style="border-radius:6px;object-fit:contain;flex-shrink:0" />`;
   },
 
   // ── Theme Management ──────────────────────────────────────
@@ -336,7 +423,7 @@ const App = {
             <div class="driver-card" onclick="App.renderStockView('HDFCBANK');App.navigate('research')">
               <div>
                 <div class="driver-card-header">
-                  <span class="driver-card-icon">🏦</span>
+                  ${this.getStockLogo('HDFCBANK', 26)}
                   <span class="driver-card-tag">Banking Momentum</span>
                 </div>
                 <div class="driver-card-title">HDFC Bank Q2 Countdown</div>
@@ -392,8 +479,13 @@ const App = {
               <tbody>
                 <tr>
                   <td>
-                    <div class="h-name">HDFC Bank</div>
-                    <div class="h-sym">NSE: HDFCBANK · Financials</div>
+                    <div style="display:flex;align-items:center;gap:10px">
+                      ${this.getStockLogo('HDFCBANK', 30)}
+                      <div>
+                        <div class="h-name">HDFC Bank</div>
+                        <div class="h-sym">NSE: HDFCBANK · Financials</div>
+                      </div>
+                    </div>
                   </td>
                   <td><span class="h-num">₹1,562.40</span></td>
                   <td><span class="positive">▲ +0.95%</span></td>
@@ -403,8 +495,13 @@ const App = {
                 </tr>
                 <tr>
                   <td>
-                    <div class="h-name">Infosys</div>
-                    <div class="h-sym">NSE: INFY · IT Services</div>
+                    <div style="display:flex;align-items:center;gap:10px">
+                      ${this.getStockLogo('INFY', 30)}
+                      <div>
+                        <div class="h-name">Infosys</div>
+                        <div class="h-sym">NSE: INFY · IT Services</div>
+                      </div>
+                    </div>
                   </td>
                   <td><span class="h-num">₹1,478.20</span></td>
                   <td><span class="negative">▼ -2.14%</span></td>
@@ -414,8 +511,13 @@ const App = {
                 </tr>
                 <tr>
                   <td>
-                    <div class="h-name">Tata Steel</div>
-                    <div class="h-sym">NSE: TATASTEEL · Metals</div>
+                    <div style="display:flex;align-items:center;gap:10px">
+                      ${this.getStockLogo('TATASTEEL', 30)}
+                      <div>
+                        <div class="h-name">Tata Steel</div>
+                        <div class="h-sym">NSE: TATASTEEL · Metals</div>
+                      </div>
+                    </div>
                   </td>
                   <td><span class="h-num">₹158.40</span></td>
                   <td><span class="positive">▲ +1.18%</span></td>
@@ -425,8 +527,13 @@ const App = {
                 </tr>
                 <tr>
                   <td>
-                    <div class="h-name">Tata Consultancy Services</div>
-                    <div class="h-sym">NSE: TCS · IT Services</div>
+                    <div style="display:flex;align-items:center;gap:10px">
+                      ${this.getStockLogo('TCS', 30)}
+                      <div>
+                        <div class="h-name">Tata Consultancy Services</div>
+                        <div class="h-sym">NSE: TCS · IT Services</div>
+                      </div>
+                    </div>
                   </td>
                   <td><span class="h-num">₹4,120.00</span></td>
                   <td><span class="negative">▼ -1.87%</span></td>
@@ -689,17 +796,23 @@ const App = {
 
       <div class="search-chips">
         ${Object.entries(STOCKS).map(([sym, s]) => `
-          <div class="search-chip ${sym === symbol ? "active" : ""}" onclick="App.renderStockView('${sym}')">${sym}</div>
+          <div class="search-chip ${sym === symbol ? "active" : ""}" onclick="App.renderStockView('${sym}')">
+            ${this.getStockLogo(sym, 18, "chip-stock-logo")}
+            <span>${sym}</span>
+          </div>
         `).join("")}
       </div>
 
       <!-- Stock Hero -->
       <div class="stock-hero section">
         <div class="stock-hero-top">
-          <div class="stock-name-block">
-            <div class="s-fullname">${stock.name}</div>
-            <div class="s-sym">NSE: ${stock.symbol} · ${stock.sector}</div>
-            <div class="s-sector">Market Cap: ${stock.marketCap}</div>
+          <div class="stock-name-block" style="display:flex;align-items:center;gap:16px">
+            ${this.getStockLogo(stock.symbol, 54, "stock-hero-avatar")}
+            <div>
+              <div class="s-fullname">${stock.name}</div>
+              <div class="s-sym">NSE: ${stock.symbol} · ${stock.sector}</div>
+              <div class="s-sector">Market Cap: ${stock.marketCap}</div>
+            </div>
           </div>
           <div class="stock-price-block">
             <div class="s-ltp ${stock.changePct >= 0 ? "positive" : "negative"}">${this.formatINR(stock.ltp)}</div>
@@ -964,7 +1077,7 @@ const App = {
         <div class="intel-list">
           ${p.portfolioIntelligence.map(item => `
             <div class="intel-item ${item.priority}" onclick="${item.stock ? `App.renderStockView('${item.stock}');App.navigate('research')` : "App.chatAsk('Explain my portfolio concentration')" }">
-              <div class="intel-icon">${item.icon}</div>
+              <div class="intel-icon">${item.stock ? this.getStockLogo(item.stock, 32, "intel-stock-logo") : `<span style="font-size:20px">${item.icon}</span>`}</div>
               <div class="intel-body">
                 <div class="intel-title">${item.title}</div>
                 <div class="intel-detail">${item.detail}</div>
@@ -994,9 +1107,14 @@ const App = {
               ${p.holdings.map(h => `
                 <tr style="cursor:pointer" onclick="App.renderStockView('${h.symbol}');App.navigate('research')">
                   <td>
-                    <div class="h-name">${h.symbol}</div>
-                    <div class="h-sym">${h.name}</div>
-                    ${h.alert ? `<div class="holding-alert">⚠️ ${h.upcoming}</div>` : ""}
+                    <div style="display:flex;align-items:center;gap:12px">
+                      ${this.getStockLogo(h.symbol, 32, "holding-stock-logo")}
+                      <div>
+                        <div class="h-name">${h.symbol}</div>
+                        <div class="h-sym">${h.name}</div>
+                        ${h.alert ? `<div class="holding-alert">🔔 ${h.upcoming}</div>` : ""}
+                      </div>
+                    </div>
                   </td>
                   <td class="h-num">${h.qty}</td>
                   <td class="h-num">${this.formatINR(h.avgCost)}</td>
@@ -1066,7 +1184,8 @@ const App = {
         ${MARKET_EVENTS.map(ev => `
           <div class="alert-card severity-${ev.severity}" data-type="${ev.type}" onclick="App.chatAsk('Explain the ${ev.symbol} ${ev.type} alert: ${ev.title}')">
             <div class="alert-top">
-              <div class="alert-left">
+              <div class="alert-left" style="display:flex;align-items:center;gap:12px">
+                ${this.getStockLogo(ev.symbol, 34, "event-stock-logo")}
                 <div>
                   <div class="alert-sym">${ev.symbol}</div>
                   <div class="alert-time">${ev.time}</div>
@@ -1262,6 +1381,7 @@ Tell me a job and I'll run it end-to-end.`,
   },
 
   chatAsk(query) {
+    this.showAgent();
     const input = document.getElementById("chat-input");
     if (input) {
       input.value = query;
@@ -1355,7 +1475,7 @@ Tell me a job and I'll run it end-to-end.`,
   proposeAlert(symbol, price, direction = "below", reason = "", autoOpen = false) {
     this._pendingAction = { type: "alert", symbol, price, direction, reason };
     document.getElementById("modal-agent-label").textContent = "🔔 Alert Agent proposes";
-    document.getElementById("modal-title").textContent = `Set Price Alert — ${symbol}`;
+    document.getElementById("modal-title").innerHTML = `<div style="display:flex;align-items:center;gap:10px">${this.getStockLogo(symbol, 26)} <span>Set Price Alert — ${symbol}</span></div>`;
     document.getElementById("modal-body").innerHTML = `
       <div class="modal-detail-row"><span class="modal-label">Stock / Index</span><span class="modal-val">${symbol}</span></div>
       <div class="modal-detail-row"><span class="modal-label">Trigger price</span><span class="modal-val">₹${Number(price).toLocaleString("en-IN")}</span></div>
@@ -1369,7 +1489,7 @@ Tell me a job and I'll run it end-to-end.`,
   proposeWatchlist(symbol) {
     this._pendingAction = { type: "watchlist", symbol };
     document.getElementById("modal-agent-label").textContent = "📋 Watchlist Agent proposes";
-    document.getElementById("modal-title").textContent = `Add to Watchlist — ${symbol}`;
+    document.getElementById("modal-title").innerHTML = `<div style="display:flex;align-items:center;gap:10px">${this.getStockLogo(symbol, 26)} <span>Add to Watchlist — ${symbol}</span></div>`;
     document.getElementById("modal-body").innerHTML = `
       <div class="modal-detail-row"><span class="modal-label">Symbol</span><span class="modal-val">${symbol}</span></div>
       <div class="modal-detail-row"><span class="modal-label">Action</span><span class="modal-val">Add to your active watchlist</span></div>
@@ -1383,7 +1503,7 @@ Tell me a job and I'll run it end-to-end.`,
     const total = (price * qty).toLocaleString("en-IN", { maximumFractionDigits: 0 });
     this._pendingAction = { type: "paper_order", symbol, price, qty, side, total };
     document.getElementById("modal-agent-label").textContent = "📄 Trade Execution proposes";
-    document.getElementById("modal-title").textContent = `Paper Order — ${side} ${symbol}`;
+    document.getElementById("modal-title").innerHTML = `<div style="display:flex;align-items:center;gap:10px">${this.getStockLogo(symbol, 26)} <span>Paper Order — ${side} ${symbol}</span></div>`;
     document.getElementById("modal-body").innerHTML = `
       <div class="modal-demo-note">📄 Mock Action Ticket · Risk-free simulator · Zero exchange routing</div>
       <div class="modal-detail-row"><span class="modal-label">Stock / Asset</span><span class="modal-val">${stock?.name || symbol} (${symbol})</span></div>

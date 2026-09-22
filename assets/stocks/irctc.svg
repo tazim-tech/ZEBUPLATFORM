@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%">
+  <defs>
+    <linearGradient id="irctcGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B2545"/>
+      <stop offset="100%" stop-color="#021024"/>
+    </linearGradient>
+    <linearGradient id="irctcOrange" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FF7A00"/>
+      <stop offset="100%" stop-color="#FF5100"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#irctcGrad)"/>
+  <rect x="1" y="1" width="62" height="62" rx="13" fill="none" stroke="#23426B" stroke-width="1.5" opacity="0.6"/>
+  <!-- Locomotive Emblem -->
+  <g transform="translate(18, 12)">
+    <circle cx="14" cy="11" r="11" fill="url(#irctcOrange)"/>
+    <!-- Wheel spoke / train front -->
+    <rect x="7" y="5" width="14" height="11" rx="2" fill="#FFFFFF"/>
+    <circle cx="10" cy="9" r="1.5" fill="#0B2545"/>
+    <circle cx="18" cy="9" r="1.5" fill="#0B2545"/>
+    <rect x="9" y="12" width="10" height="2" fill="#0B2545"/>
+  </g>
+  <!-- Text Label -->
+  <text x="32" y="44" font-family="'Inter', -apple-system, sans-serif" font-weight="900" font-size="10" fill="#FFFFFF" text-anchor="middle" letter-spacing="1">IRCTC</text>
+  <text x="32" y="53" font-family="'Inter', sans-serif" font-weight="700" font-size="5" fill="#FB923C" text-anchor="middle" letter-spacing="0.5">INDIAN RAILWAYS</text>
+</svg>

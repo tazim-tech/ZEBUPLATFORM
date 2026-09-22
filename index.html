@@ -47,6 +47,11 @@
       MARKET OPEN
     </div>
     <div class="topbar-time" id="clock">09:30:00 IST</div>
+    <button id="topbar-agent-toggle" class="agent-toggle-pill active" title="Hide Agent to Side (Alt+A)" onclick="App.toggleAgent()">
+      <img src="assets/zebu-mark.svg" width="13" height="13" alt="AI" />
+      <span class="agent-pill-text">Agent</span>
+      <span class="agent-pill-dot"></span>
+    </button>
     <button id="topbar-nav-toggle" class="nav-toggle-btn" title="Hide/Show Navigation (Alt+N)" onclick="App.toggleNav()">
       <span class="nav-toggle-icon">◀</span>
       <span class="nav-toggle-text">Hide Nav</span>
@@ -93,6 +98,7 @@
         <button class="chat-hdr-btn" id="chat-nav-toggle" title="Toggle Navigation (Alt+N)" onclick="App.toggleNav()">◀ Nav</button>
         <button class="chat-hdr-btn" id="memory-btn" title="Agent Memory" onclick="App.showMemory()">🧠</button>
         <button class="chat-hdr-btn" title="Clear chat" onclick="App.clearChat()">🗑</button>
+        <button class="chat-hdr-btn" id="agent-hide-btn" title="Hide Agent to Side (Alt+A)" onclick="App.toggleAgent()">◀</button>
       </div>
     </div>
 
@@ -103,11 +109,11 @@
     <div class="chat-input-area">
       <!-- Job Suggestion Pills -->
       <div class="chat-suggestions" id="chat-suggestions">
-        <div class="suggestion-pill" onclick="App.chatAsk('Research TCS')">🔍 Research TCS</div>
+        <div class="suggestion-pill" onclick="App.chatAsk('Research TCS')"><img src="assets/stocks/tcs.svg" width="14" height="14" alt="TCS" style="vertical-align:middle;border-radius:3px;margin-right:4px"/> Research TCS</div>
         <div class="suggestion-pill" onclick="App.chatAsk('Fix my portfolio risk')">⚡ Fix portfolio risk</div>
-        <div class="suggestion-pill" onclick="App.chatAsk('Set alert on TCS at ₹4,080')">🔔 Set TCS alert</div>
+        <div class="suggestion-pill" onclick="App.chatAsk('Set alert on TCS at ₹4,080')"><img src="assets/stocks/tcs.svg" width="14" height="14" alt="TCS" style="vertical-align:middle;border-radius:3px;margin-right:4px"/> Set TCS alert</div>
         <div class="suggestion-pill" onclick="App.chatAsk('Explain RSI in today\'s market')">🎓 Learn RSI today</div>
-        <div class="suggestion-pill" onclick="App.chatAsk('Paper buy 2 TCS shares')">📄 Paper buy 2 TCS</div>
+        <div class="suggestion-pill" onclick="App.chatAsk('Paper buy 2 TCS shares')"><img src="assets/stocks/tcs.svg" width="14" height="14" alt="TCS" style="vertical-align:middle;border-radius:3px;margin-right:4px"/> Paper buy 2 TCS</div>
         <div class="suggestion-pill" onclick="App.chatAsk('What\'s the market verdict for today?')">📊 Market brief</div>
       </div>
 
@@ -241,6 +247,16 @@
     </div>
   </div>
 </div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     FLOATING AGENT TRIGGER (Visible when Agent is hidden to the side)
+═══════════════════════════════════════════════════════════ -->
+<button id="floating-agent-btn" class="floating-agent-toggle" onclick="App.toggleAgent()" title="Open ZEBU AI Agent (Alt+A)">
+  <img src="assets/zebu-mark.svg" width="18" height="18" alt="AI" />
+  <span class="agent-fab-label">ZEBU AI</span>
+  <span class="agent-fab-live">LIVE</span>
+  <span class="agent-fab-dot"></span>
+</button>
 
 <!-- ═══════════════════════════════════════════════════════════
      TOAST NOTIFICATIONS

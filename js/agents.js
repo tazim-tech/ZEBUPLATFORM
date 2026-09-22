@@ -296,7 +296,13 @@ const AgentEngine = {
       agent: "Stock Research Agent",
       icon: "🔍",
       stock: stock,
-      content: `**${stock.name} (${stock.symbol})** — Live Research Verdict
+      content: `<div class="chat-stock-title-row">
+  <img src="assets/stocks/${stock.symbol.toLowerCase()}.svg" width="34" height="34" class="chat-stock-logo" alt="${stock.symbol}" onerror="this.src='assets/stocks/default.svg'"/>
+  <div>
+    <div style="font-weight:800;font-size:14px;color:var(--text-primary)">${stock.name} (${stock.symbol})</div>
+    <div style="font-size:11px;color:var(--text-tertiary)">NSE Listed · ${stock.sector} · Live Research Verdict</div>
+  </div>
+</div>
 
 <div class="chat-metric-grid">
   <div class="chat-metric-cell">
@@ -414,10 +420,14 @@ ${inPortfolio ? `\n📁 _You currently hold ${stock.symbol} in your book._` : ""
       type: "paper_order",
       agent: "Trade Execution Agent",
       icon: "📄",
-      content: `**Mock Action Ticket — ${side} ${sym}**
-
-<div class="chat-ticket-box">
-  <div class="chat-ticket-title">📄 Ready for Mock Execution (Paper Trading)</div>
+      content: `<div class="chat-ticket-box">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border-1)">
+    <img src="assets/stocks/${sym.toLowerCase()}.svg" width="30" height="30" class="chat-stock-logo" alt="${sym}" onerror="this.src='assets/stocks/default.svg'"/>
+    <div>
+      <div style="font-weight:800;font-size:13px;color:var(--text-primary)">${stock.name} (${sym})</div>
+      <div style="font-size:11px;color:var(--text-tertiary)">Mock Action Ticket · Zero Exchange Risk</div>
+    </div>
+  </div>
   <div class="chat-ticket-grid">
     <div class="chat-ticket-item">
       <span class="chat-ticket-lbl">Stock / Asset</span>

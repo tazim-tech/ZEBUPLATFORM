@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bnGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E1B4B"/>
+      <stop offset="100%" stop-color="#030712"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#bnGrad)"/>
+  <rect x="1" y="1" width="62" height="62" rx="13" fill="none" stroke="#312E81" stroke-width="1.5" opacity="0.6"/>
+  <!-- Banking Pillar Icon -->
+  <g transform="translate(18, 12)">
+    <!-- Roof -->
+    <polygon points="14,2 2,10 26,10" fill="#6366F1"/>
+    <!-- Pillars -->
+    <rect x="4" y="11" width="3" height="10" fill="#FFFFFF"/>
+    <rect x="10" y="11" width="3" height="10" fill="#FFFFFF"/>
+    <rect x="15" y="11" width="3" height="10" fill="#FFFFFF"/>
+    <rect x="21" y="11" width="3" height="10" fill="#FFFFFF"/>
+    <!-- Base -->
+    <rect x="2" y="22" width="24" height="3" rx="1" fill="#6366F1"/>
+  </g>
+  <!-- Text Label -->
+  <text x="32" y="45" font-family="'Inter', -apple-system, sans-serif" font-weight="900" font-size="8" fill="#FFFFFF" text-anchor="middle" letter-spacing="0.5">BANK NIFTY</text>
+  <text x="32" y="53" font-family="'Inter', sans-serif" font-weight="700" font-size="5" fill="#A5B4FC" text-anchor="middle" letter-spacing="0.8">NSE BANKING</text>
+</svg>

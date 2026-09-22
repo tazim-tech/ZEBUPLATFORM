@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%">
+  <defs>
+    <linearGradient id="rilGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0E2D62"/>
+      <stop offset="100%" stop-color="#04122C"/>
+    </linearGradient>
+    <radialGradient id="rilRed" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FF3344"/>
+      <stop offset="100%" stop-color="#D90429"/>
+    </radialGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#rilGrad)"/>
+  <rect x="1" y="1" width="62" height="62" rx="13" fill="none" stroke="#254B8C" stroke-width="1.5" opacity="0.6"/>
+  <!-- Reliance Flame Ring -->
+  <circle cx="32" cy="24" r="14" fill="url(#rilRed)"/>
+  <circle cx="32" cy="24" r="11" fill="#0E2D62"/>
+  <path d="M30 17 L34 24 L30 31 Z" fill="#FF3344"/>
+  <text x="32" y="29" font-family="'Inter', sans-serif" font-weight="900" font-size="14" fill="#FFFFFF" text-anchor="middle">R</text>
+  <!-- Text Label -->
+  <text x="32" y="47" font-family="'Inter', sans-serif" font-weight="800" font-size="7.5" fill="#FFFFFF" text-anchor="middle" letter-spacing="1">RELIANCE</text>
+  <text x="32" y="54" font-family="'Inter', sans-serif" font-weight="600" font-size="5" fill="#EF4444" text-anchor="middle" letter-spacing="0.5">GROWTH IS LIFE</text>
+</svg>
