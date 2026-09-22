@@ -1984,41 +1984,102 @@ body.agent-hidden #screen-panel {
   flex: 1 1 100% !important;
 }
 
-/* Topbar Agent Toggle Pill */
-.agent-toggle-pill {
+/* Topbar Agent Badge Button */
+.topbar-agent-badge-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  border-radius: 20px;
-  border: 1px solid var(--border-1);
-  background: var(--surface-1);
-  color: var(--text-secondary);
-  font-size: 11px;
-  font-weight: 600;
+  gap: 5px;
+  background: rgba(0, 55, 183, 0.08);
+  border: 1px solid var(--border-purple);
+  border-radius: 12px;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--zebu-purple-light);
   cursor: pointer;
   transition: all var(--t-fast);
 }
-.agent-toggle-pill:hover {
+.topbar-agent-badge-btn:hover {
   background: var(--surface-2);
-  border-color: var(--border-purple);
-  color: var(--text-primary);
+  border-color: var(--zebu-purple);
 }
-.agent-toggle-pill.active {
-  background: rgba(0, 55, 183, 0.08);
-  border-color: var(--border-purple);
-  color: var(--zebu-purple-light);
+.topbar-agent-badge-btn.active {
+  background: rgba(0, 55, 183, 0.14);
 }
-.agent-pill-dot {
-  width: 6px;
-  height: 6px;
+.topbar-agent-badge-btn .dot {
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: var(--green);
   animation: pulse-green 2s infinite;
 }
-.agent-toggle-pill:not(.active) .agent-pill-dot {
-  background: var(--text-muted);
-  animation: none;
+
+/* Chat Header Hide AI Button */
+.chat-hide-ai-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-2);
+  border-radius: 14px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--t-fast);
+  white-space: nowrap;
+}
+.chat-hide-ai-btn:hover {
+  background: var(--red-dim);
+  color: var(--red);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+/* Chat Header Action Buttons */
+.chat-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.chat-hdr-btn {
+  width: 28px;
+  height: 28px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-1);
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--t-fast);
+  flex-shrink: 0;
+}
+.chat-hdr-btn:hover {
+  background: var(--surface-3);
+  color: var(--text-primary);
+  border-color: var(--border-2);
+}
+
+/* Predefined Questions Tray */
+.chat-suggestions-wrap {
+  margin-bottom: 8px;
+}
+.chat-suggestions-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 5px;
+  padding: 0 2px;
+}
+.sugg-hdr-text {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 /* Floating Agent Restore Button (Visible when agent is hidden in side) */

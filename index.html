@@ -30,7 +30,11 @@
   <!-- Logo -->
   <div class="topbar-logo" onclick="App.navigate('home')" style="cursor:pointer" title="ZEBU — Reliable Always">
     <img src="assets/zebu-logo.svg" alt="ZEBU — Reliable Always" class="official-logo" />
-    <span class="logo-ai-badge">AI AGENT</span>
+    <button id="topbar-left-agent-btn" class="topbar-agent-badge-btn" onclick="event.stopPropagation();App.toggleAgent()" title="Hide / Show AI Panel (Alt+A)">
+      <img src="assets/zebu-mark.svg" width="12" height="12" alt="AI"/>
+      <span>AI AGENT</span>
+      <span class="dot"></span>
+    </button>
   </div>
 
   <!-- Live Indices -->
@@ -47,10 +51,9 @@
       MARKET OPEN
     </div>
     <div class="topbar-time" id="clock">09:30:00 IST</div>
-    <button id="topbar-agent-toggle" class="agent-toggle-pill active" title="Hide Agent to Side (Alt+A)" onclick="App.toggleAgent()">
-      <img src="assets/zebu-mark.svg" width="13" height="13" alt="AI" />
-      <span class="agent-pill-text">Agent</span>
-      <span class="agent-pill-dot"></span>
+    <button id="topbar-ai-toggle" class="nav-toggle-btn active" title="Hide/Show AI Panel (Alt+A)" onclick="App.toggleAgent()">
+      <span class="ai-toggle-icon">◀</span>
+      <span class="ai-toggle-text">Hide AI</span>
     </button>
     <button id="topbar-nav-toggle" class="nav-toggle-btn" title="Hide/Show Navigation (Alt+N)" onclick="App.toggleNav()">
       <span class="nav-toggle-icon">◀</span>
@@ -95,10 +98,9 @@
       </div>
       <div class="chat-header-actions">
         <button class="chat-hdr-btn" id="agent-focus-btn" title="Toggle Agent Focus Mode (Alt+F)" onclick="App.toggleAgentFocus()">⛶</button>
-        <button class="chat-hdr-btn" id="chat-nav-toggle" title="Toggle Navigation (Alt+N)" onclick="App.toggleNav()">◀ Nav</button>
         <button class="chat-hdr-btn" id="memory-btn" title="Agent Memory" onclick="App.showMemory()">🧠</button>
         <button class="chat-hdr-btn" title="Clear chat" onclick="App.clearChat()">🗑</button>
-        <button class="chat-hdr-btn" id="agent-hide-btn" title="Hide Agent to Side (Alt+A)" onclick="App.toggleAgent()">◀</button>
+        <button class="chat-hide-ai-btn" id="chat-hide-ai-btn" title="Hide AI Assistant (Alt+A)" onclick="App.toggleAgent()">◀ Hide AI</button>
       </div>
     </div>
 
@@ -107,14 +109,20 @@
 
     <!-- Input area -->
     <div class="chat-input-area">
-      <!-- Job Suggestion Pills -->
-      <div class="chat-suggestions" id="chat-suggestions">
-        <div class="suggestion-pill" onclick="App.chatAsk('Research TCS')"><img src="assets/stocks/tcs.svg" width="14" height="14" alt="TCS" style="vertical-align:middle;border-radius:3px;margin-right:4px"/> Research TCS</div>
-        <div class="suggestion-pill" onclick="App.chatAsk('Fix my portfolio risk')">⚡ Fix portfolio risk</div>
-        <div class="suggestion-pill" onclick="App.chatAsk('Set alert on TCS at ₹4,080')"><img src="assets/stocks/tcs.svg" width="14" height="14" alt="TCS" style="vertical-align:middle;border-radius:3px;margin-right:4px"/> Set TCS alert</div>
-        <div class="suggestion-pill" onclick="App.chatAsk('Explain RSI in today\'s market')">🎓 Learn RSI today</div>
-        <div class="suggestion-pill" onclick="App.chatAsk('Paper buy 2 TCS shares')"><img src="assets/stocks/tcs.svg" width="14" height="14" alt="TCS" style="vertical-align:middle;border-radius:3px;margin-right:4px"/> Paper buy 2 TCS</div>
-        <div class="suggestion-pill" onclick="App.chatAsk('What\'s the market verdict for today?')">📊 Market brief</div>
+      <!-- Predefined Questions & Quick Actions (Always Available) -->
+      <div class="chat-suggestions-wrap">
+        <div class="chat-suggestions-hdr">
+          <span class="sugg-hdr-text">💡 Predefined Questions & Actions</span>
+        </div>
+        <div class="chat-suggestions" id="chat-suggestions">
+          <div class="suggestion-pill" onclick="App.chatAsk('Research TCS')"><img src="assets/stocks/tcs.svg" width="14" height="14" alt="TCS" style="vertical-align:middle;border-radius:3px;margin-right:4px"/> Research TCS</div>
+          <div class="suggestion-pill" onclick="App.chatAsk('Fix my portfolio risk')">⚡ Fix portfolio risk</div>
+          <div class="suggestion-pill" onclick="App.chatAsk('Set alert on TCS at ₹4,080')"><img src="assets/stocks/tcs.svg" width="14" height="14" alt="TCS" style="vertical-align:middle;border-radius:3px;margin-right:4px"/> Set TCS alert</div>
+          <div class="suggestion-pill" onclick="App.chatAsk('Explain RSI in today\'s market')">🎓 Learn RSI today</div>
+          <div class="suggestion-pill" onclick="App.chatAsk('Paper buy 2 TCS shares')"><img src="assets/stocks/tcs.svg" width="14" height="14" alt="TCS" style="vertical-align:middle;border-radius:3px;margin-right:4px"/> Paper buy 2 TCS</div>
+          <div class="suggestion-pill" onclick="App.chatAsk('What\'s the market verdict for today?')">📊 Market brief</div>
+          <div class="suggestion-pill" onclick="App.chatAsk('Open an account with ZEBU')">🏦 Open account (KYC)</div>
+        </div>
       </div>
 
       <div class="chat-input-row">

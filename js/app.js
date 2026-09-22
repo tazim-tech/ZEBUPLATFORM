@@ -88,28 +88,35 @@ const App = {
 
   applyAgentState(notify = false) {
     const shell = document.getElementById("app-shell");
-    const topBtn = document.getElementById("topbar-agent-toggle");
-    const hideBtn = document.getElementById("agent-hide-btn");
+    const topAiToggle = document.getElementById("topbar-ai-toggle");
+    const topBadgeBtn = document.getElementById("topbar-left-agent-btn");
+    const chatHideBtn = document.getElementById("chat-hide-ai-btn");
 
     if (shell) shell.classList.toggle("agent-hidden", this._agentHidden);
     document.body.classList.toggle("agent-hidden", this._agentHidden);
 
-    if (topBtn) {
-      topBtn.classList.toggle("active", !this._agentHidden);
-      const text = topBtn.querySelector(".agent-pill-text");
-      if (text) text.textContent = this._agentHidden ? "Show Agent" : "Agent";
-      topBtn.title = this._agentHidden ? "Show ZEBU AI Agent (Alt+A)" : "Hide Agent to Side (Alt+A)";
+    if (topAiToggle) {
+      topAiToggle.classList.toggle("active", !this._agentHidden);
+      const icon = topAiToggle.querySelector(".ai-toggle-icon");
+      const text = topAiToggle.querySelector(".ai-toggle-text");
+      if (icon) icon.textContent = this._agentHidden ? "▶" : "◀";
+      if (text) text.textContent = this._agentHidden ? "Show AI" : "Hide AI";
+      topAiToggle.title = this._agentHidden ? "Show AI Panel (Alt+A)" : "Hide AI Panel to Side (Alt+A)";
     }
 
-    if (hideBtn) {
-      hideBtn.title = this._agentHidden ? "Restore Agent (Alt+A)" : "Hide Agent to Side (Alt+A)";
+    if (topBadgeBtn) {
+      topBadgeBtn.classList.toggle("active", !this._agentHidden);
+    }
+
+    if (chatHideBtn) {
+      chatHideBtn.textContent = this._agentHidden ? "▶ Show AI" : "◀ Hide AI";
     }
 
     localStorage.setItem("zebu_agent_hidden", this._agentHidden);
 
     if (notify) {
       this.showToast(
-        this._agentHidden ? "Agent hidden to side · Press Alt+A to restore" : "ZEBU AI Agent restored",
+        this._agentHidden ? "AI panel hidden to side · Press Alt+A to restore" : "ZEBU AI panel restored",
         "info-toast"
       );
     }
@@ -1395,10 +1402,6 @@ Tell me a job and I'll run it end-to-end.`,
     if (!query) return;
     input.value = "";
     input.style.height = "auto";
-
-    // Hide suggestions after first message
-    const sugg = document.getElementById("chat-suggestions");
-    if (sugg) sugg.style.display = "none";
 
     this.addMessage("user", { content: query });
 
