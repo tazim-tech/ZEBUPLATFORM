@@ -2154,7 +2154,7 @@ body.chat-hidden .chat-fab-btn {
   background: rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(8px);
   z-index: 500;
-  display: flex !important;
+  display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
