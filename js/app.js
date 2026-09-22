@@ -8,9 +8,13 @@ const App = {
   clockInterval: null,
   _pendingAction: null,       // action waiting for confirm modal
   _sidebarCollapsed: false,
+  _navHidden: false,
+  _agentFocus: false,
 
   init() {
     this.initTheme();
+    this.initNavState();
+    this.initShortcuts();
     this.renderTopbarIndices();
     this.renderTicker();
     this.startClock();
@@ -27,6 +31,73 @@ const App = {
     // Auto-expand textarea
     const ta = document.getElementById("chat-input");
     if (ta) ta.addEventListener("input", () => { ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight, 120) + "px"; });
+  },
+
+  // ── Navigation & Cockpit Controls ─────────────────────────
+  initNavState() {
+    const saved = localStorage.getItem("zebu_nav_hidden");
+    this._navHidden = saved === "true";
+    this.applyNavState(false);
+  },
+
+  applyNavState(notify = false) {
+    const screenPanel = document.getElementById("screen-panel");
+    const sidebar = document.getElementById("sidebar");
+    const topBtn = document.getElementById("topbar-nav-toggle");
+    const chatBtn = document.getElementById("chat-nav-toggle");
+
+    if (screenPanel) screenPanel.classList.toggle("nav-hidden", this._navHidden);
+    if (sidebar) sidebar.classList.toggle("nav-hidden", this._navHidden);
+
+    if (topBtn) {
+      topBtn.classList.toggle("nav-is-hidden", this._navHidden);
+      const icon = topBtn.querySelector(".nav-toggle-icon");
+      const text = topBtn.querySelector(".nav-toggle-text");
+      if (icon) icon.textContent = this._navHidden ? "▶" : "◀";
+      if (text) text.textContent = this._navHidden ? "Show Nav" : "Hide Nav";
+    }
+
+    if (chatBtn) {
+      chatBtn.textContent = this._navHidden ? "▶ Nav" : "◀ Nav";
+      chatBtn.title = this._navHidden ? "Show Navigation (Alt+N)" : "Hide Navigation (Alt+N)";
+    }
+
+    localStorage.setItem("zebu_nav_hidden", this._navHidden);
+
+    if (notify) {
+      this.showToast(
+        this._navHidden ? "Navigation hidden · All features active from Agent Chat" : "Navigation restored",
+        "info-toast"
+      );
+    }
+  },
+
+  toggleNav() {
+    this._navHidden = !this._navHidden;
+    this.applyNavState(true);
+  },
+
+  toggleAgentFocus() {
+    this._agentFocus = !this._agentFocus;
+    document.getElementById("app-shell")?.classList.toggle("agent-focus", this._agentFocus);
+    const btn = document.getElementById("agent-focus-btn");
+    if (btn) btn.classList.toggle("active", this._agentFocus);
+    this.showToast(
+      this._agentFocus ? "Agent Focus Mode: Cockpit expanded" : "Split view restored",
+      "info-toast"
+    );
+  },
+
+  initShortcuts() {
+    window.addEventListener("keydown", (e) => {
+      if (e.altKey && e.key.toLowerCase() === "n") {
+        e.preventDefault();
+        this.toggleNav();
+      } else if (e.altKey && e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        this.toggleAgentFocus();
+      }
+    });
   },
 
   // ── Theme Management ──────────────────────────────────────
@@ -54,14 +125,6 @@ const App = {
     const current = document.documentElement.getAttribute("data-theme") || "light";
     const next = current === "light" ? "dark" : "light";
     this.setTheme(next, true);
-  },
-
-  // ── Sidebar toggle ───────────────────────────────────────
-  toggleSidebar() {
-    this._sidebarCollapsed = !this._sidebarCollapsed;
-    document.getElementById("screen-panel")?.classList.toggle("sidebar-collapsed", this._sidebarCollapsed);
-    const btn = document.getElementById("sidebar-toggle-btn");
-    if (btn) btn.title = this._sidebarCollapsed ? "Show screen panel" : "Collapse screen panel";
   },
 
   // ── Navigation ────────────────────────────────────────────
@@ -1267,91 +1330,6 @@ Tell me a job and I'll run it end-to-end.`,
     document.getElementById(id)?.remove();
   },
 
-  // ── Message Renderer ───────────────────────────────────────
-  addMessage(role, data) {
-    const container = document.getElementById("chat-messages");
-    if (!container) return;
-
-    const id = "msg-" + Date.now();
-    const div = document.createElement("div");
-    div.className = `chat-msg ${role}`;
-    div.id = id;
-
-    if (role === "user") {
-      div.innerHTML = `
-        <div class="msg-avatar user-av">RS</div>
-        <div class="msg-bubble user-bubble">${this.escapeHtml(data.content)}</div>`;
-    } else {
-      const content = this.renderMarkdown(data.content || "");
-      const sources = data.sources?.length ? `
-        <div class="msg-sources">
-          ${data.sources.map(s => `<span class="source-chip">📍 ${s}</span>`).join("")}
-        </div>` : "";
-      const disclaimer = data.disclaimer ? `
-        <div class="msg-disclaimer">⚠️ Informational only. Not SEBI-registered advice.</div>` : "";
-
-      // Next move pills — every response must have them
-      const nextMoves = data.nextMoves?.length ? `
-        <div class="next-moves">
-          <div class="next-moves-label">Next move:</div>
-          <div class="next-moves-pills">
-            ${data.nextMoves.map((m, i) => `
-              <button class="next-move-pill" id="nm-${id}-${i}" onclick="App.runNextMove(${JSON.stringify(m).replace(/"/g, '&quot;')})">${m.label}</button>
-            `).join("")}
-          </div>
-        </div>` : "";
-
-      div.innerHTML = `
-        <div class="msg-avatar">🤖</div>
-        <div class="msg-content-wrap">
-          <div class="msg-agent-tag">${data.icon || "🤖"} ${data.agent || "ZEBU AI"}</div>
-          <div class="msg-bubble">
-            ${content}
-            ${sources}
-            ${disclaimer}
-            ${nextMoves}
-          </div>
-        </div>`;
-    }
-
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
-    return id;
-  },
-
-  // ── Watch Loop Message (different style — monitoring alert) ─
-  addWatchMessage(alert) {
-    const container = document.getElementById("chat-messages");
-    if (!container) return;
-
-    const div = document.createElement("div");
-    div.className = "chat-msg ai watch-msg";
-
-    const nextMoves = alert.nextMoves?.length ? `
-      <div class="next-moves">
-        <div class="next-moves-label">Action:</div>
-        <div class="next-moves-pills">
-          ${alert.nextMoves.map((m, i) => `
-            <button class="next-move-pill" onclick="App.runNextMove(${JSON.stringify(m).replace(/"/g, '&quot;')})">${m.label}</button>
-          `).join("")}
-        </div>
-      </div>` : "";
-
-    div.innerHTML = `
-      <div class="msg-avatar watch-avatar">🔔</div>
-      <div class="msg-content-wrap">
-        <div class="msg-agent-tag watch-tag">🔔 Watch Loop · ${alert.symbol}</div>
-        <div class="msg-bubble watch-bubble">
-          <div class="watch-title">${alert.title}</div>
-          <div class="watch-detail">${this.renderMarkdown(alert.detail)}</div>
-          ${nextMoves}
-        </div>
-      </div>`;
-
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
-  },
-
   // ── Next Move Dispatcher ───────────────────────────────────
   runNextMove(move) {
     const { action } = move;
@@ -1365,7 +1343,7 @@ Tell me a job and I'll run it end-to-end.`,
     } else if (action === "proposeWatchlist") {
       this.proposeWatchlist(move.symbol);
     } else if (action === "proposePaperOrder") {
-      this.proposePaperOrder(move.symbol, move.price, move.qty);
+      this.proposePaperOrder(move.symbol, move.price, move.qty, move.side || "BUY", move.autoOpen);
     } else if (action === "proposeKYC") {
       this.proposeKYC();
     } else if (action === "proposeShareCard") {
@@ -1380,53 +1358,54 @@ Tell me a job and I'll run it end-to-end.`,
     document.getElementById("modal-title").textContent = `Set Price Alert — ${symbol}`;
     document.getElementById("modal-body").innerHTML = `
       <div class="modal-detail-row"><span class="modal-label">Stock / Index</span><span class="modal-val">${symbol}</span></div>
-      <div class="modal-detail-row"><span class="modal-label">Trigger price</span><span class="modal-val">₹${price.toLocaleString("en-IN")}</span></div>
+      <div class="modal-detail-row"><span class="modal-label">Trigger price</span><span class="modal-val">₹${Number(price).toLocaleString("en-IN")}</span></div>
       <div class="modal-detail-row"><span class="modal-label">Direction</span><span class="modal-val">${direction === "below" ? "▼ Falls below" : "▲ Rises above"}</span></div>
       <div class="modal-detail-row"><span class="modal-label">Reason</span><span class="modal-val">${reason}</span></div>
-      <div class="modal-detail-row"><span class="modal-label">Notification</span><span class="modal-val">Chat message + toast</span></div>`;
-    document.getElementById("modal-confirm-btn").textContent = "✅ Set Alert";
+      <div class="modal-detail-row"><span class="modal-label">Notification</span><span class="modal-val">Chat message + desktop toast</span></div>`;
+    document.getElementById("modal-confirm-btn").textContent = "✅ Activate Alert";
     this.openConfirmModal();
   },
 
   proposeWatchlist(symbol) {
     this._pendingAction = { type: "watchlist", symbol };
-    document.getElementById("modal-agent-label").textContent = "📋 Portfolio Agent proposes";
+    document.getElementById("modal-agent-label").textContent = "📋 Watchlist Agent proposes";
     document.getElementById("modal-title").textContent = `Add to Watchlist — ${symbol}`;
     document.getElementById("modal-body").innerHTML = `
       <div class="modal-detail-row"><span class="modal-label">Symbol</span><span class="modal-val">${symbol}</span></div>
-      <div class="modal-detail-row"><span class="modal-label">Action</span><span class="modal-val">Add to your watchlist</span></div>
-      <div class="modal-detail-row"><span class="modal-label">Monitor</span><span class="modal-val">Agent will watch for setups</span></div>`;
+      <div class="modal-detail-row"><span class="modal-label">Action</span><span class="modal-val">Add to your active watchlist</span></div>
+      <div class="modal-detail-row"><span class="modal-label">Monitor</span><span class="modal-val">Agent watch loop will track setups</span></div>`;
     document.getElementById("modal-confirm-btn").textContent = "📋 Add to Watchlist";
     this.openConfirmModal();
   },
 
-  proposePaperOrder(symbol, price, qty) {
-    const stock = ZEBU_DATA.STOCKS[symbol];
+  proposePaperOrder(symbol, price, qty, side = "BUY", autoOpen = false) {
+    const stock = ZEBU_DATA.STOCKS[symbol] || { name: symbol, ltp: price };
     const total = (price * qty).toLocaleString("en-IN", { maximumFractionDigits: 0 });
-    this._pendingAction = { type: "paper_order", symbol, price, qty, total };
-    document.getElementById("modal-agent-label").textContent = "📄 Trade Agent proposes";
-    document.getElementById("modal-title").textContent = `Paper Order — ${symbol}`;
+    this._pendingAction = { type: "paper_order", symbol, price, qty, side, total };
+    document.getElementById("modal-agent-label").textContent = "📄 Trade Execution proposes";
+    document.getElementById("modal-title").textContent = `Paper Order — ${side} ${symbol}`;
     document.getElementById("modal-body").innerHTML = `
-      <div class="modal-demo-note">📄 Paper trade only — no real order placed</div>
-      <div class="modal-detail-row"><span class="modal-label">Stock</span><span class="modal-val">${stock?.name || symbol}</span></div>
-      <div class="modal-detail-row"><span class="modal-label">Action</span><span class="modal-val">BUY</span></div>
-      <div class="modal-detail-row"><span class="modal-label">Qty</span><span class="modal-val">${qty} shares</span></div>
-      <div class="modal-detail-row"><span class="modal-label">Price</span><span class="modal-val">₹${price.toLocaleString("en-IN")} (CMP)</span></div>
-      <div class="modal-detail-row"><span class="modal-label">Total</span><span class="modal-val">≈ ₹${total}</span></div>`;
-    document.getElementById("modal-confirm-btn").textContent = "📄 Place Paper Order";
+      <div class="modal-demo-note">📄 Mock Action Ticket · Risk-free simulator · Zero exchange routing</div>
+      <div class="modal-detail-row"><span class="modal-label">Stock / Asset</span><span class="modal-val">${stock?.name || symbol} (${symbol})</span></div>
+      <div class="modal-detail-row"><span class="modal-label">Order Action</span><span class="modal-val" style="color:${side === "BUY" ? "var(--green)" : "var(--red)"};font-weight:800">${side}</span></div>
+      <div class="modal-detail-row"><span class="modal-label">Quantity</span><span class="modal-val">${qty} shares</span></div>
+      <div class="modal-detail-row"><span class="modal-label">Execution Price</span><span class="modal-val">₹${Number(price).toLocaleString("en-IN")}</span></div>
+      <div class="modal-detail-row"><span class="modal-label">Estimated Total</span><span class="modal-val">≈ ₹${total}</span></div>
+      <div class="modal-detail-row"><span class="modal-label">Brokerage (ZEBU)</span><span class="modal-val">₹0.00 (Demo Mode)</span></div>`;
+    document.getElementById("modal-confirm-btn").textContent = `📄 Execute Paper ${side}`;
     this.openConfirmModal();
   },
 
   proposeKYC() {
     this._pendingAction = { type: "kyc" };
     document.getElementById("modal-agent-label").textContent = "🏦 ZEBU Onboarding proposes";
-    document.getElementById("modal-title").textContent = "Start Account Opening";
+    document.getElementById("modal-title").textContent = "Open Real ZEBU Demat Account";
     document.getElementById("modal-body").innerHTML = `
       <div class="modal-detail-row"><span class="modal-label">Broker</span><span class="modal-val">Zebu Share & Wealth Managements Pvt. Ltd.</span></div>
       <div class="modal-detail-row"><span class="modal-label">SEBI Reg</span><span class="modal-val">INZ000273636</span></div>
-      <div class="modal-detail-row"><span class="modal-label">Time</span><span class="modal-val">~5 minutes with Aadhaar + PAN</span></div>
-      <div class="modal-detail-row"><span class="modal-label">Brokerage</span><span class="modal-val">₹20 flat per order</span></div>`;
-    document.getElementById("modal-confirm-btn").textContent = "🏦 Start KYC";
+      <div class="modal-detail-row"><span class="modal-label">Account Opening</span><span class="modal-val">100% Paperless (~5 minutes)</span></div>
+      <div class="modal-detail-row"><span class="modal-label">Brokerage</span><span class="modal-val">₹20 flat per executed order</span></div>`;
+    document.getElementById("modal-confirm-btn").textContent = "🏦 Initiate KYC";
     this.openConfirmModal();
   },
 
@@ -1435,11 +1414,11 @@ Tell me a job and I'll run it end-to-end.`,
     document.getElementById("modal-agent-label").textContent = "📤 ZEBU AI proposes";
     document.getElementById("modal-title").textContent = `Share Insight Card`;
     document.getElementById("modal-body").innerHTML = `
-      <div class="modal-demo-note">📤 Share a card — no personal data included</div>
-      <div class="modal-detail-row"><span class="modal-label">Card title</span><span class="modal-val">${this.escapeHtml(title)}</span></div>
+      <div class="modal-demo-note">📤 Share an outcome card — no private book data included</div>
+      <div class="modal-detail-row"><span class="modal-label">Card Title</span><span class="modal-val">${this.escapeHtml(title)}</span></div>
       <div class="modal-detail-row"><span class="modal-label">Summary</span><span class="modal-val" style="max-width:220px;text-align:right;font-size:11px">${this.escapeHtml(summary)}</span></div>
       <div class="modal-detail-row"><span class="modal-label">Watermark</span><span class="modal-val">ZEBU AI · ${new Date().toLocaleDateString("en-IN")}</span></div>
-      <div class="modal-detail-row"><span class="modal-label">Format</span><span class="modal-val">Copy text · Download card (demo)</span></div>`;
+      <div class="modal-detail-row"><span class="modal-label">Format</span><span class="modal-val">Formatted text + copy to clipboard</span></div>`;
     document.getElementById("modal-confirm-btn").textContent = "📤 Copy & Share";
     this.openConfirmModal();
   },
@@ -1470,92 +1449,108 @@ Tell me a job and I'll run it end-to-end.`,
         type: "confirm",
         agent: "Alerts Agent",
         icon: "🔔",
-        content: `✅ **Alert set** — I'll message you when **${action.symbol}** ${action.direction === "below" ? "falls below" : "rises above"} ₹${action.price.toLocaleString("en-IN")}.
+        content: `✅ **Alert Activated** — Monitoring **${action.symbol}** at **₹${Number(action.price).toLocaleString("en-IN")}** (${action.direction === "below" ? "falls below" : "rises above"}).
 
-*${action.reason}*
-
-The watch loop is now actively monitoring this level.`,
-        sources: [],
+**Reason:** ${action.reason}
+**Status:** Live watch loop registered. You'll receive instant chat alerts and desktop notifications when breached.
+**Active Alerts Count:** ${AgentMemory.get().alertsSet.length}`,
+        sources: ["ZEBU Alerts Engine"],
         disclaimer: false,
         nextMoves: [
-          { label: "📋 Add to watchlist too", action: "proposeWatchlist", symbol: action.symbol },
-          { label: "📊 See all alerts", action: "openScreen", view: "events" },
+          { label: `📄 Paper trade ${action.symbol} @ level`, action: "proposePaperOrder", symbol: action.symbol, price: action.price, qty: 2, side: "BUY" },
+          { label: "📋 Add " + action.symbol + " to watchlist", action: "proposeWatchlist", symbol: action.symbol },
+          { label: "⚡ Fix portfolio risk", action: "chat", query: "Fix my portfolio risk" },
         ],
       });
-      this.showToast(`🔔 Alert set: ${action.symbol} ${action.direction === "below" ? "<" : ">"} ₹${action.price.toLocaleString("en-IN")}`, "alert-toast");
+      this.showToast(`🔔 Alert active: ${action.symbol} ${action.direction === "below" ? "<" : ">"} ₹${Number(action.price).toLocaleString("en-IN")}`, "alert-toast");
     } else if (action.type === "watchlist") {
       AgentMemory.addWatchlist(action.symbol);
       this.addMessage("ai", {
         type: "confirm",
         agent: "Portfolio Agent",
         icon: "📋",
-        content: `✅ **${action.symbol} added to watchlist.** I'll surface setups on this stock in future briefs.
+        content: `✅ **${action.symbol} added to Watchlist.**
 
-You now have ${AgentMemory.get().watchlist.length} stocks on watchlist.`,
-        sources: [],
+I will continuously monitor setups, RSI extremes, and support/resistance breaches on ${action.symbol}.
+
+**Current Watchlist Size:** ${AgentMemory.get().watchlist.length} securities`,
+        sources: ["ZEBU Market Monitor"],
         disclaimer: false,
         nextMoves: [
-          { label: "🔔 Set price alert", action: "proposeAlert", symbol: action.symbol, price: ZEBU_DATA.STOCKS[action.symbol]?.technicals?.support || 0, direction: "below", reason: "Watchlist support" },
+          { label: "🔔 Set price alert", action: "proposeAlert", symbol: action.symbol, price: ZEBU_DATA.STOCKS[action.symbol]?.technicals?.support || 0, direction: "below", reason: "Watchlist support level" },
+          { label: `📄 Paper buy 2 shares ${action.symbol}`, action: "proposePaperOrder", symbol: action.symbol, price: ZEBU_DATA.STOCKS[action.symbol]?.ltp || 1000, qty: 2, side: "BUY" },
         ],
       });
       this.showToast(`📋 ${action.symbol} added to watchlist`, "info-toast");
     } else if (action.type === "paper_order") {
       AgentMemory.addPaperOrder(action);
+      const side = action.side || "BUY";
       this.addMessage("ai", {
         type: "confirm",
-        agent: "Trade Agent",
+        agent: "Trade Execution Agent",
         icon: "📄",
-        content: `📄 **Paper order placed** — BUY ${action.qty} × ${action.symbol} @ ₹${action.price.toLocaleString("en-IN")}
+        content: `📄 **Mock Action Executed** — **${side} ${action.qty} × ${action.symbol}** @ ₹${Number(action.price).toLocaleString("en-IN")}
 
-Total value: ≈ ₹${action.total}
+**Trade Result in Numbers:**
+• Executed Total: **≈ ₹${action.total}**
+• Brokerage Incurred: **₹0.00** (ZEBU Demo Simulator)
+• Position Status: **Filled & Tracked in Memory**
+• Total Paper Orders Placed: **${AgentMemory.get().paperOrders.length}**
 
-*This is a paper trade (demo mode). No real order was placed.*
-
-I'll track this position's P&L in future portfolio messages.`,
-        sources: [],
+${side === "SELL" ? "Capital has been preserved and concentration risk has been capped." : "This position is now monitored by the background agent loop."}`,
+        sources: ["ZEBU Trade Engine"],
         disclaimer: false,
         nextMoves: [
-          { label: "🔔 Set stop-loss alert", action: "proposeAlert", symbol: action.symbol, price: Math.round(action.price * 0.97), direction: "below", reason: "Paper trade stop-loss (3%)" },
-          { label: "💼 See portfolio", action: "openScreen", view: "portfolio" },
+          { label: "🔔 Set protective stop alert", action: "proposeAlert", symbol: action.symbol, price: Math.round(action.price * (side === "SELL" ? 1.025 : 0.975)), direction: side === "SELL" ? "above" : "below", reason: "Paper position risk stop" },
+          { label: "⚡ Fix another portfolio risk", action: "chat", query: "Fix my portfolio risk" },
+          { label: "📋 Add " + action.symbol + " to watchlist", action: "proposeWatchlist", symbol: action.symbol },
+          { label: "🏦 Open real account (₹20/order)", action: "proposeKYC" },
         ],
       });
-      this.showToast(`📄 Paper order: BUY ${action.qty} ${action.symbol} @ ₹${action.price.toLocaleString("en-IN")}`, "info-toast");
+      this.showToast(`📄 Mock Order Executed: ${side} ${action.qty} ${action.symbol} @ ₹${Number(action.price).toLocaleString("en-IN")}`, "info-toast");
     } else if (action.type === "kyc") {
       AgentMemory.startKYC();
       this.addMessage("ai", {
         type: "confirm",
         agent: "ZEBU Onboarding",
         icon: "🏦",
-        content: `🏦 **KYC started** — In production this would open the Zebu account opening flow.
+        content: `🏦 **Paperless KYC Initiated**
 
-You'd need:
-• PAN card
-• Aadhaar (for e-KYC)
-• Bank account details
-• ~5 minutes
+• **Broker:** Zebu Share & Wealth Managements Pvt. Ltd. (SEBI Reg: INZ000273636)
+• **Brokerage:** Flat ₹20 per executed order across NSE/BSE/MCX
+• **Estimated Time:** ~5 minutes with Aadhaar e-Sign + PAN
 
-*This is a demo — no actual account is being opened.*`,
+*Demo simulation complete. Your interest in trading real has been recorded in Agent Memory.*`,
         sources: ["Zebu Share and Wealth Managements Pvt. Ltd."],
         disclaimer: false,
-        nextMoves: [],
+        nextMoves: [
+          { label: "⚡ Fix portfolio risk", action: "chat", query: "Fix my portfolio risk" },
+          { label: "🔍 Research TCS setup", action: "chat", query: "Research TCS" },
+        ],
       });
       this.showToast("🏦 KYC flow initiated (demo)", "info-toast");
     } else if (action.type === "share_card") {
-      const cardText = `📊 ZEBU AI Insight\n${action.title}\n${action.summary}\n\nGenerated by ZEBU AI · Demo — Not investment advice\n#ZEBUAI #IndianMarkets`;
+      const cardText = `📊 ZEBU AI Market Intelligence\n${action.title}\n${action.summary}\n\nGenerated by ZEBU AI Platform · SEBI Reg: INZ000273636\n#ZEBUAI #IndianMarkets`;
       try { navigator.clipboard.writeText(cardText); } catch (e) { /* fallback */ }
       this.addMessage("ai", {
         type: "confirm",
         agent: "ZEBU AI",
         icon: "📤",
-        content: `📤 **Insight card copied to clipboard.**\n\n**"${action.title}"**\n${action.summary}\n\nShare this on WhatsApp, Twitter, or with your broker. In production, this would generate a branded ZEBU image card with your analysis.`,
+        content: `📤 **Outcome Card Copied to Clipboard.**
+
+> 📊 **${action.title}**
+> ${action.summary}
+
+Share this on WhatsApp, Telegram, or Twitter with 1 click.`,
         sources: [],
         disclaimer: false,
         nextMoves: [
-          { label: "📊 Another analysis", action: "chat", query: "What's the market verdict for today?" },
-          { label: "🏦 Open real account", action: "proposeKYC" },
+          { label: "⚡ Fix portfolio risk", action: "chat", query: "Fix my portfolio risk" },
+          { label: "🔍 Research Reliance", action: "chat", query: "Research Reliance" },
+          { label: "🏦 Open real account (KYC)", action: "proposeKYC" },
         ],
       });
-      this.showToast("📤 Insight card copied to clipboard", "info-toast");
+      this.showToast("📤 Outcome card copied to clipboard", "info-toast");
     }
 
     this._pendingAction = null;
@@ -1615,7 +1610,7 @@ You'd need:
 
   // ── Markdown renderer ─────────────────────────────────────
   renderMarkdown(text) {
-    return text
+    let html = text
       .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
       .replace(/\*(.+?)\*/g, "<em>$1</em>")
       .replace(/`(.+?)`/g, "<code>$1</code>")
@@ -1625,7 +1620,12 @@ You'd need:
       .replace(/\n/g, "<br>")
       .replace(/^/, "<p>")
       .replace(/$/, "</p>")
-      .replace(/<p><\/p>/g, "");
+      .replace(/<p><\/p>/g, "")
+      .replace(/<p>(<div[^>]*>)/g, "$1")
+      .replace(/(<\/div>)<\/p>/g, "$1")
+      .replace(/<p><br>/g, "<p>")
+      .replace(/<br><\/p>/g, "</p>");
+    return html;
   },
 
   escapeHtml(str) {

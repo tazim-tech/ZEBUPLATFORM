@@ -99,6 +99,8 @@ const ToolUse = {
       market:         [{ label: "Market Tool", delay: 500 }, { label: "FII/DII Feed", delay: 900 }, { label: "Breadth Analysis", delay: 1300 }],
       stock_research: [{ label: "Research Tool", delay: 400 }, { label: "Technical Engine", delay: 900 }, { label: "Fundamental Screener", delay: 1400 }],
       portfolio:      [{ label: "Portfolio Tool", delay: 400 }, { label: "Risk Engine", delay: 900 }, { label: "Correlation Matrix", delay: 1400 }],
+      fix_risk:       [{ label: "Portfolio Tool", delay: 350 }, { label: "Risk Matrix", delay: 750 }, { label: "Rebalancing Engine", delay: 1200 }],
+      paper_order:    [{ label: "Trade Agent", delay: 350 }, { label: "Pre-Trade Risk Check", delay: 750 }, { label: "Ticket Builder", delay: 1100 }],
       education:      [{ label: "Learn Tool", delay: 400 }, { label: "Market Context Engine", delay: 900 }],
       events:         [{ label: "Alerts Tool", delay: 400 }, { label: "OI Scanner", delay: 900 }, { label: "Volume Detector", delay: 1300 }],
       set_alert:      [{ label: "Alerts Tool", delay: 400 }, { label: "Price Level Engine", delay: 800 }],
@@ -121,11 +123,13 @@ const AgentEngine = {
   // ── Intent classifier ──
   classifyIntent(query) {
     const q = query.toLowerCase();
-    if (/\b(stress.test|stress test|risk|rebalance|concentration|diversi|what.if)\b/.test(q)) return "stress_test";
+    if (/\b(paper.*(buy|sell|order|trade)|mock.*(action|trade|buy|order)|buy.*shares?|sell.*shares?|place.*order|mock.*action)\b/.test(q)) return "paper_order";
+    if (/\b(fix.*risk|fix.*portfolio|portfolio.*risk|risk.*fix|reduce.*risk|concentration.*risk|rebalance|hedge.*portfolio)\b/.test(q)) return "fix_risk";
+    if (/\b(stress.test|stress test|what.if)\b/.test(q)) return "stress_test";
     if (/\b(set.alert|alert.on|alert.when|price.alert|alert.at|trigger)\b/.test(q)) return "set_alert";
     if (/\b(results|earnings|q[1-4]|quarterly|results.day|prep.for|before.results)\b/.test(q)) return "results_prep";
     if (/\b(portfolio|holdings|position|my stock|my shares|how.*i.doing)\b/.test(q)) return "portfolio";
-    if (/\b(explain|what is|how does|meaning|concept|define|learn|teach|what.*rsi|what.*pe|what.*macd|what.*fii|what.*vix|what.*pcr)\b/.test(q)) return "education";
+    if (/\b(explain|teach|learn|how does|concept|define|meaning of|what is (an? )?(rsi|pe|pcr|macd|vix|fii)|what.*(rsi|pe|macd|pcr|vix))\b/.test(q)) return "education";
     if (/\b(alert|event|unusual|volume|breakout|oi|open interest)\b/.test(q)) return "events";
     if (/\b(market|nifty|sensex|banknifty|bank nifty|sector|fii|dii|breadth|today|brief|verdict|outlook)\b/.test(q)) return "market";
     if (/\b(kyc|account|open.*account|register|demat|start.*kyc|open.*zebu)\b/.test(q)) return "kyc";
@@ -147,6 +151,7 @@ const AgentEngine = {
       "irctc": "IRCTC",
       "tata steel": "TATASTEEL", "tatasteel": "TATASTEEL",
       "infosys": "INFY", "infy": "INFY",
+      "gold": "GOLDBEES", "goldbees": "GOLDBEES",
     };
     for (const [key, sym] of Object.entries(map)) {
       if (q.includes(key)) return sym;
@@ -177,7 +182,7 @@ const AgentEngine = {
 
     // Return tool steps + response factory
     const toolSteps = ToolUse.stepsFor(intent);
-    const totalDelay = toolSteps[toolSteps.length - 1].delay + 600;
+    const totalDelay = toolSteps[toolSteps.length - 1].delay + 550;
 
     const { MARKET_DATA, STOCKS, USER_PORTFOLIO, MARKET_EVENTS, EDUCATION_CONCEPTS } = window.ZEBU_DATA;
     const mem = AgentMemory.get();
@@ -198,11 +203,17 @@ const AgentEngine = {
       case "portfolio":
         return this.portfolioResponse(query, USER_PORTFOLIO, MARKET_DATA, mem);
 
+      case "fix_risk":
+        return this.fixPortfolioRiskResponse(query, USER_PORTFOLIO, MARKET_DATA, mem);
+
+      case "paper_order":
+        return this.paperOrderResponse(query, STOCKS, USER_PORTFOLIO, mem);
+
       case "stress_test":
         return this.stressTestResponse(query, USER_PORTFOLIO, MARKET_DATA, mem);
 
       case "set_alert": {
-        const sym = this.extractSymbol(query) || "NIFTY50";
+        const sym = this.extractSymbol(query) || "TCS";
         const stock = STOCKS[sym];
         return this.setAlertResponse(query, sym, stock, mem);
       }
@@ -274,25 +285,175 @@ const AgentEngine = {
     const f = stock.fundamentals;
     const fin = stock.financials;
     const signal_color = t.signal === "BULLISH" ? "🟢" : t.signal === "BEARISH" ? "🔴" : "🟡";
-    const pe_vs_sector = f.pe < f.sectorPE ? "below sector avg (potential value)" : "above sector avg";
+    const pe_vs_sector = f.pe < f.sectorPE ? "below sector avg" : "above sector avg";
     const inPortfolio = mem.holdingsFocus?.includes(stock.symbol);
-    const paperQty = Math.floor(5000 / stock.ltp) || 1;
+    const paperQty = Math.max(1, Math.floor(5000 / stock.ltp));
     const paperTotal = (paperQty * stock.ltp).toLocaleString("en-IN", { maximumFractionDigits: 0 });
+    const bufferPct = (((stock.ltp - t.support) / stock.ltp) * 100).toFixed(1);
 
     return {
       type: "stock_research",
       agent: "Stock Research Agent",
       icon: "🔍",
       stock: stock,
-      openScreen: { view: "research", symbol: stock.symbol },
-      content: `**${stock.name} (${stock.symbol})** — Research Complete\n\n**Price:** ₹${stock.ltp.toLocaleString("en-IN")} ${stock.changePct >= 0 ? "▲" : "▼"} ${Math.abs(stock.changePct).toFixed(2)}% · 52W: ₹${stock.week52Low} – ₹${stock.week52High}\n\n**Technical** ${signal_color} ${t.signal}\nRSI ${t.rsi14} (${t.rsi14 > 70 ? "overbought ⚠️" : t.rsi14 < 30 ? "oversold — watch for reversal" : "neutral"}) · Support ₹${t.support} · Resistance ₹${t.resistance}\n\n**Fundamental** P/E ${f.pe}x — ${pe_vs_sector} · ROE ${f.roe}% · Revenue ${fin.revenue} (${fin.revenueGrowth})\n\n**Verdict:** ${stock.analysis.summary}\n\n${inPortfolio ? "📁 _You hold this stock — shown in context of your portfolio_\n\n" : ""}**Next move:** Paper buy ${paperQty} shares @ ₹${stock.ltp.toLocaleString("en-IN")} = ₹${paperTotal} · or set support alert at ₹${t.support}`,
+      content: `**${stock.name} (${stock.symbol})** — Live Research Verdict
+
+<div class="chat-metric-grid">
+  <div class="chat-metric-cell">
+    <span class="chat-metric-label">LTP (CMP)</span>
+    <span class="chat-metric-val">₹${stock.ltp.toLocaleString("en-IN")}</span>
+  </div>
+  <div class="chat-metric-cell">
+    <span class="chat-metric-label">Today</span>
+    <span class="chat-metric-val ${stock.changePct >= 0 ? "bullish" : "bearish"}">${stock.changePct >= 0 ? "▲ +" : "▼ "}${stock.changePct.toFixed(2)}%</span>
+  </div>
+  <div class="chat-metric-cell">
+    <span class="chat-metric-label">RSI(14)</span>
+    <span class="chat-metric-val ${t.rsi14 < 40 ? "bullish" : t.rsi14 > 70 ? "bearish" : "neutral"}">${t.rsi14}</span>
+  </div>
+  <div class="chat-metric-cell">
+    <span class="chat-metric-label">Support</span>
+    <span class="chat-metric-val">₹${t.support}</span>
+  </div>
+  <div class="chat-metric-cell">
+    <span class="chat-metric-label">Resistance</span>
+    <span class="chat-metric-val">₹${t.resistance}</span>
+  </div>
+  <div class="chat-metric-cell">
+    <span class="chat-metric-label">P/E Ratio</span>
+    <span class="chat-metric-val">${f.pe}x</span>
+  </div>
+</div>
+
+**Technical Bias:** ${signal_color} **${t.signal}** · RSI ${t.rsi14} (${t.rsi14 < 35 ? "Oversold bounce watch" : t.rsi14 > 70 ? "Overbought risk" : "Neutral"})
+**Key Pivots:** Major support at **₹${t.support}** (cushion: ₹${(stock.ltp - t.support).toFixed(1)} / ${bufferPct}%) · Resistance at **₹${t.resistance}**
+**Valuation:** P/E of **${f.pe}x** vs sector **${f.sectorPE}x** (${pe_vs_sector}) · ROE **${f.roe}%** · Revenue **${fin.revenue}** (${fin.revenueGrowth})
+**AI Verdict:** ${stock.analysis.summary}
+${inPortfolio ? `\n📁 _You currently hold ${stock.symbol} in your book._` : ""}`,
       sources: ["NSE India", "Screener.in"],
       disclaimer: true,
       nextMoves: [
-        { label: "🔔 Alert at support ₹" + t.support, action: "proposeAlert", symbol: stock.symbol, price: t.support, direction: "below", reason: `${stock.symbol} technical support` },
-        { label: "📄 Paper buy " + paperQty + " shares", action: "proposePaperOrder", symbol: stock.symbol, price: stock.ltp, qty: paperQty },
-        { label: "📋 Add to watchlist", action: "proposeWatchlist", symbol: stock.symbol },
-        { label: "📤 Share analysis", action: "proposeShareCard", title: `${stock.symbol} Research`, summary: `${signal_color} ${t.signal} · RSI ${t.rsi14} · P/E ${f.pe}x · Support ₹${t.support}` },
+        { label: `📄 Paper buy ${paperQty} sh @ ₹${stock.ltp.toLocaleString("en-IN")} (≈ ₹${paperTotal})`, action: "proposePaperOrder", symbol: stock.symbol, price: stock.ltp, qty: paperQty, side: "BUY" },
+        { label: `🔔 Alert @ support ₹${t.support} (${bufferPct}% cushion)`, action: "proposeAlert", symbol: stock.symbol, price: t.support, direction: "below", reason: `${stock.symbol} technical support level` },
+        { label: `📋 Add ${stock.symbol} to watchlist`, action: "proposeWatchlist", symbol: stock.symbol },
+        { label: `📤 Share ${stock.symbol} analysis`, action: "proposeShareCard", title: `${stock.symbol} Research`, summary: `${t.signal} · CMP ₹${stock.ltp} · RSI ${t.rsi14} · Support ₹${t.support}` },
+      ],
+    };
+  },
+
+  fixPortfolioRiskResponse(query, portfolio, md, mem) {
+    const p = portfolio;
+    const totalVal = p.currentValue;
+    const itHoldings = p.holdings.filter(h => h.symbol === "TCS" || h.symbol === "INFY");
+    const itValue = itHoldings.reduce((sum, h) => sum + h.currentValue, 0);
+    const itWeightPct = 30.8;
+    const itCapPct = 20.0;
+    const itExcessRupees = Math.round(totalVal * ((itWeightPct - itCapPct) / 100));
+    const hdfc = p.holdings.find(h => h.symbol === "HDFCBANK") || { qty: 45, ltp: 1598.45, currentValue: 71930 };
+    const hdfcRiskVal = Math.round(hdfc.currentValue * 0.04);
+    const tcsLtp = window.ZEBU_DATA.STOCKS.TCS?.ltp || 4112.35;
+    const tcsSupport = window.ZEBU_DATA.STOCKS.TCS?.technicals?.support || 4080;
+    const tcsBufferPct = (((tcsLtp - tcsSupport) / tcsLtp) * 100).toFixed(2);
+
+    return {
+      type: "fix_risk",
+      agent: "Portfolio Risk Engine",
+      icon: "⚡",
+      content: `**Portfolio Risk Audit — Immediate Numerical Fixes**
+
+**Current Book:** ₹${totalVal.toLocaleString("en-IN")} · Day P&L: **-₹${Math.abs(p.dayPnl).toLocaleString("en-IN")} (${p.dayPnlPct.toFixed(2)}%)**
+
+<div class="chat-risk-box">
+  <div class="chat-risk-title">⚠️ Identified Vulnerabilities (Outcomes in Numbers)</div>
+  <div class="chat-risk-row">
+    <span class="chat-risk-label">1. IT Sector Concentration</span>
+    <span class="chat-risk-val" style="color:var(--red)">${itWeightPct}% (₹1,53,600) vs 20% limit · Excess: ₹${itExcessRupees.toLocaleString("en-IN")}</span>
+  </div>
+  <div class="chat-risk-row">
+    <span class="chat-risk-label">2. HDFC Bank Q2 Event Risk (4 PM)</span>
+    <span class="chat-risk-val" style="color:var(--amber)">45 shares (₹${Math.round(hdfc.currentValue).toLocaleString("en-IN")}) · ±4% swing = ±₹${hdfcRiskVal.toLocaleString("en-IN")}</span>
+  </div>
+  <div class="chat-risk-row">
+    <span class="chat-risk-label">3. TCS 200-EMA Proximity</span>
+    <span class="chat-risk-val" style="color:var(--red)">₹${tcsLtp.toLocaleString("en-IN")} is just ${tcsBufferPct}% (₹${(tcsLtp - tcsSupport).toFixed(1)}) above ₹${tcsSupport}</span>
+  </div>
+  <div class="chat-risk-row">
+    <span class="chat-risk-label">4. Defensive/Gold Allocation</span>
+    <span class="chat-risk-val" style="color:var(--amber)">0.01% (Under-hedged against market drawdown)</span>
+  </div>
+</div>
+
+**Measurable 4-Step Action Plan:**
+1. **Trim IT Exposure:** Paper sell 5 shares TCS @ ₹${tcsLtp.toLocaleString("en-IN")} → frees **₹${(5 * tcsLtp).toLocaleString("en-IN", {maximumFractionDigits:0})}**, dropping IT exposure to 26.7%.
+2. **Cap IT Downside:** Set TCS stop-loss alert at **₹${tcsSupport}** to prevent larger drawdown if 200-EMA breaks.
+3. **Protect HDFC Bank:** Set downside protection alert at **₹1,540** ahead of 4 PM earnings announcement.
+4. **Deploy Defensive Hedge:** Allocate ₹2,443 to GOLDBEES (50 units @ ₹48.87) to cushion equity volatility.`,
+      sources: ["ZEBU Risk Engine", "NSE Real-time Feed"],
+      disclaimer: true,
+      nextMoves: [
+        { label: "📄 Paper sell 5 TCS @ ₹" + Math.round(tcsLtp).toLocaleString("en-IN"), action: "proposePaperOrder", symbol: "TCS", price: tcsLtp, qty: 5, side: "SELL" },
+        { label: "🔔 Protect HDFC @ ₹1,540", action: "proposeAlert", symbol: "HDFCBANK", price: 1540, direction: "below", reason: "Pre-results risk protection" },
+        { label: "🔔 Stop TCS @ ₹4,080", action: "proposeAlert", symbol: "TCS", price: 4080, direction: "below", reason: "200 EMA support breach stop" },
+        { label: "📄 Paper buy 50 GOLDBEES (Hedge)", action: "proposePaperOrder", symbol: "GOLDBEES", price: 48.87, qty: 50, side: "BUY" },
+        { label: "📤 Share risk fix plan", action: "proposeShareCard", title: "Portfolio Risk Action Plan", summary: "Trim IT by ₹20,560 · Stop TCS at ₹4,080 · Protect HDFC at ₹1,540 · Add Gold Hedge" },
+      ],
+    };
+  },
+
+  paperOrderResponse(query, stocks, portfolio, mem) {
+    const sym = this.extractSymbol(query) || "TCS";
+    const stock = stocks[sym] || stocks["TCS"];
+    const sideMatch = query.match(/\b(sell|short)\b/i);
+    const side = sideMatch ? "SELL" : "BUY";
+    const qtyMatch = query.match(/\b(\d+)\s*(?:shares?|units?|qty)?\b/i);
+    const qty = qtyMatch ? parseInt(qtyMatch[1]) : (side === "SELL" ? 2 : Math.max(1, Math.floor(5000 / stock.ltp)));
+    const price = stock.ltp;
+    const total = Math.round(price * qty);
+
+    return {
+      type: "paper_order",
+      agent: "Trade Execution Agent",
+      icon: "📄",
+      content: `**Mock Action Ticket — ${side} ${sym}**
+
+<div class="chat-ticket-box">
+  <div class="chat-ticket-title">📄 Ready for Mock Execution (Paper Trading)</div>
+  <div class="chat-ticket-grid">
+    <div class="chat-ticket-item">
+      <span class="chat-ticket-lbl">Stock / Asset</span>
+      <span class="chat-ticket-v">${stock.name} (${sym})</span>
+    </div>
+    <div class="chat-ticket-item">
+      <span class="chat-ticket-lbl">Action</span>
+      <span class="chat-ticket-v" style="color:${side === "BUY" ? "var(--green)" : "var(--red)"}">${side}</span>
+    </div>
+    <div class="chat-ticket-item">
+      <span class="chat-ticket-lbl">Quantity</span>
+      <span class="chat-ticket-v">${qty} shares</span>
+    </div>
+    <div class="chat-ticket-item">
+      <span class="chat-ticket-lbl">Market Price</span>
+      <span class="chat-ticket-v">₹${price.toLocaleString("en-IN")}</span>
+    </div>
+    <div class="chat-ticket-item">
+      <span class="chat-ticket-lbl">Estimated Total</span>
+      <span class="chat-ticket-v">₹${total.toLocaleString("en-IN")}</span>
+    </div>
+    <div class="chat-ticket-item">
+      <span class="chat-ticket-lbl">Brokerage / Impact</span>
+      <span class="chat-ticket-v">₹0.00 (Paper Demo)</span>
+    </div>
+  </div>
+</div>
+
+This is a risk-free paper simulation. Confirm below to execute this mock trade and track its P&L right in chat.`,
+      sources: ["ZEBU Trade Engine"],
+      disclaimer: false,
+      nextMoves: [
+        { label: `📄 Confirm ${side} ${qty} ${sym} (₹${total.toLocaleString("en-IN")})`, action: "proposePaperOrder", symbol: sym, price, qty, side, autoOpen: true },
+        { label: "🔔 Alert at support ₹" + (stock.technicals?.support || Math.round(price * 0.97)), action: "proposeAlert", symbol: sym, price: stock.technicals?.support || Math.round(price * 0.97), direction: "below", reason: "Trade protective stop" },
+        { label: "📋 Add " + sym + " to watchlist", action: "proposeWatchlist", symbol: sym },
+        { label: "🏦 Open real ZEBU account", action: "proposeKYC" },
       ],
     };
   },
@@ -302,13 +463,13 @@ const AgentEngine = {
       type: "text",
       agent: "Stock Research Agent",
       icon: "🔍",
-      content: `I can analyse any NSE/BSE stock. In this demo I have: **TCS, HDFC Bank, Reliance, Tata Motors, IRCTC, Tata Steel, Infosys**.\n\nTry: *"Analyse TCS"*, *"Research Reliance"*, *"HDFC Bank Q2 setup"*`,
+      content: `I can analyse any NSE/BSE stock right from chat. In this demo I have: **TCS, HDFC Bank, Reliance, Tata Motors, IRCTC, Tata Steel, Infosys**.\n\nTry: *"Research TCS"*, *"Analyse Reliance"*, *"HDFC Bank Q2 setup"*`,
       sources: [],
       disclaimer: false,
       nextMoves: [
-        { label: "🔍 Analyse TCS", action: "chat", query: "Analyse TCS" },
-        { label: "🔍 Research HDFC Bank", action: "chat", query: "Analyse HDFC Bank" },
-        { label: "🔍 Reliance setup", action: "chat", query: "Analyse Reliance" },
+        { label: "🔍 Research TCS", action: "chat", query: "Research TCS" },
+        { label: "🔍 Research HDFC Bank", action: "chat", query: "Research HDFC Bank" },
+        { label: "🔍 Research Reliance", action: "chat", query: "Research Reliance" },
       ],
     };
   },
@@ -316,19 +477,26 @@ const AgentEngine = {
   portfolioResponse(query, portfolio, md, mem) {
     const dayColor = portfolio.dayPnl >= 0 ? "📈" : "📉";
     const alerts = portfolio.holdings.filter(h => h.alert);
-    const atRisk = Math.abs(portfolio.dayPnl);
 
     return {
       type: "portfolio",
       agent: "Portfolio Intelligence Agent",
       icon: "💼",
-      openScreen: { view: "portfolio" },
-      content: `**Portfolio — ${md.timestamp}**\n\nValue: **₹${portfolio.currentValue.toLocaleString("en-IN")}** · All-time: **+₹${portfolio.totalPnl.toLocaleString("en-IN")} (+${portfolio.totalPnlPct.toFixed(2)}%)**\nToday ${dayColor}: **${portfolio.dayPnl < 0 ? "-" : "+"}₹${Math.abs(portfolio.dayPnl).toLocaleString("en-IN")} (${portfolio.dayPnlPct.toFixed(2)}%)**\n\n**${alerts.length} holdings need attention:**\n${alerts.map(h => `⚠️ **${h.name}** — ${h.upcoming}`).join("\n")}\n\n**Context:** Today's dip is macro-driven (NIFTY -0.80%), not stock-specific. IT selling (you hold TCS) is the biggest contributor. HDFC Bank Q2 results at 4 PM could swing ±1.5%.\n\n**Measurable next move:** Set HDFC Bank protection alert at ₹1,520 · or stress-test for a -3% scenario (estimated -₹${Math.round(portfolio.currentValue * 0.03).toLocaleString("en-IN")} impact)`,
+      content: `**Portfolio Status — ${md.timestamp}**
+
+Value: **₹${portfolio.currentValue.toLocaleString("en-IN")}** · All-time: **+₹${portfolio.totalPnl.toLocaleString("en-IN")} (+${portfolio.totalPnlPct.toFixed(2)}%)**
+Today ${dayColor}: **${portfolio.dayPnl < 0 ? "-" : "+"}₹${Math.abs(portfolio.dayPnl).toLocaleString("en-IN")} (${portfolio.dayPnlPct.toFixed(2)}%)**
+
+**${alerts.length} holdings need attention:**
+${alerts.map(h => `⚠️ **${h.name}** — ${h.upcoming}`).join("\n")}
+
+**Key Observation:** IT sector selling is the primary drag (-₹1,627 today on TCS + INFY). HDFC Bank results at 4 PM represent immediate ±4% volatility risk.`,
       sources: ["ZEBU Portfolio API", "NSE India"],
       disclaimer: true,
       nextMoves: [
-        { label: "⚡ Stress-test -3% scenario", action: "chat", query: "Stress-test my portfolio with a 3% Nifty fall" },
-        { label: "🔔 Protect HDFC @ ₹1,520", action: "proposeAlert", symbol: "HDFCBANK", price: 1520, direction: "below", reason: "Q2 results protection level" },
+        { label: "⚡ Fix my portfolio risk", action: "chat", query: "Fix my portfolio risk" },
+        { label: "🔔 Protect HDFC @ ₹1,540", action: "proposeAlert", symbol: "HDFCBANK", price: 1540, direction: "below", reason: "Q2 results protection level" },
+        { label: "🔔 Stop TCS @ ₹4,080", action: "proposeAlert", symbol: "TCS", price: 4080, direction: "below", reason: "200 EMA support protection" },
         { label: "📤 Share portfolio snapshot", action: "proposeShareCard", title: "Portfolio Snapshot", summary: `₹${portfolio.currentValue.toLocaleString("en-IN")} · +${portfolio.totalPnlPct.toFixed(2)}% all-time · Today: ${portfolio.dayPnl < 0 ? "-" : "+"}${portfolio.dayPnlPct.toFixed(2)}%` },
       ],
     };
@@ -338,41 +506,67 @@ const AgentEngine = {
     const p = portfolio;
     const fallScenario = query.toLowerCase().includes("2%") ? 2 : query.toLowerCase().includes("5%") ? 5 : 3;
     const portfolioImpact = -(p.currentValue * (fallScenario / 100));
-    const biggestRisk = p.holdings.sort((a, b) => b.weight - a.weight)[0];
     const impactFormatted = Math.abs(portfolioImpact).toLocaleString("en-IN", { maximumFractionDigits: 0 });
 
     return {
       type: "stress_test",
       agent: "Portfolio Risk Engine",
       icon: "⚡",
-      openScreen: { view: "portfolio" },
-      content: `**Stress Test — ${fallScenario}% Market Decline Scenario**\n\n**If NIFTY falls ${fallScenario}% from here:**\nEstimated portfolio impact: **-₹${impactFormatted}** (₹${(p.currentValue * (fallScenario / 100) / p.currentValue * 100).toFixed(1)}% of your book)\n\n**Biggest concentration risk:**\n${biggestRisk.name} at **${biggestRisk.weight.toFixed(1)}% of portfolio** — amplifies any sector move.\n\n**Sector exposure:**\n• IT: ~35% (most exposed to US macro) → estimated -₹${(p.currentValue * 0.35 * fallScenario / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}\n• Financials: ~28% (HDFC Bank — event risk today) → -₹${(p.currentValue * 0.28 * fallScenario / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}\n• Energy/Oil: ~22% (relatively stable) → -₹${(p.currentValue * 0.22 * fallScenario / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}\n\n**Risk score: ${p.riskScore || 74}/100 — Moderate**\nYou have adequate diversification but IT concentration is elevated.\n\n**Resilience note:** DII buying at ₹${md.fiiDii.dii.net.toFixed(0)} Cr/day provides a cushion near NIFTY 24,200.\n\n**Measurable action:** Set TCS stop-loss at ₹4,000 to cap IT downside.`,
+      content: `**Stress Test — ${fallScenario}% Market Decline Scenario**
+
+**If NIFTY falls ${fallScenario}% from here:**
+Estimated portfolio impact: **-₹${impactFormatted}** (₹${(p.currentValue * (fallScenario / 100) / p.currentValue * 100).toFixed(1)}% of your book)
+
+**Sector exposure:**
+• IT: ~31% (most exposed to US macro) → estimated -₹${(p.currentValue * 0.31 * fallScenario / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+• Financials: ~24% (HDFC Bank — event risk today) → -₹${(p.currentValue * 0.24 * fallScenario / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+• Energy/Oil: ~28% (Reliance) → -₹${(p.currentValue * 0.28 * fallScenario / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+
+**Risk score: ${p.riskScore || 74}/100 — Moderate**
+Measurable action: Rebalance IT exposure or place downside stops to protect capital.`,
       sources: ["ZEBU Portfolio API", "NSE India"],
       disclaimer: true,
       nextMoves: [
-        { label: "🔔 Stop TCS @ ₹4,000", action: "proposeAlert", symbol: "TCS", price: 4000, direction: "below", reason: "Stop-loss from stress test" },
-        { label: "🔔 Protect HDFC @ ₹1,520", action: "proposeAlert", symbol: "HDFCBANK", price: 1520, direction: "below", reason: "Q2 results protection" },
+        { label: "⚡ Fix portfolio risk now", action: "chat", query: "Fix my portfolio risk" },
+        { label: "🔔 Stop TCS @ ₹4,080", action: "proposeAlert", symbol: "TCS", price: 4080, direction: "below", reason: "Stop-loss from stress test" },
+        { label: "🔔 Protect HDFC @ ₹1,540", action: "proposeAlert", symbol: "HDFCBANK", price: 1540, direction: "below", reason: "Q2 results protection" },
         { label: "📤 Share stress-test result", action: "proposeShareCard", title: "Stress Test Result", summary: `${fallScenario}% NIFTY fall → estimated -₹${impactFormatted} on your portfolio · Risk score ${p.riskScore || 74}/100` },
       ],
     };
   },
 
   setAlertResponse(query, symbol, stock, mem) {
-    const price = stock?.technicals?.support || (stock?.ltp ? Math.round(stock.ltp * 0.97) : 24200);
-    const reason = stock ? `${symbol} technical support` : "Key market level";
-    const buffer = stock?.ltp ? ((stock.ltp - price) / price * 100).toFixed(1) : null;
+    // Extract price if specified in query
+    const priceMatch = query.match(/(?:at|level|price|rs\.?|₹)\s*(\d[\d,]*)/i);
+    let price = priceMatch ? parseInt(priceMatch[1].replace(/,/g, "")) : (stock?.technicals?.support || 4080);
+    const reason = stock ? `${symbol} technical support level` : "Key market level";
+    const currentPrice = stock?.ltp || 4112.35;
+    const diff = currentPrice - price;
+    const bufferPct = ((diff / currentPrice) * 100).toFixed(2);
+    const paperQty = Math.max(1, Math.floor(5000 / currentPrice));
 
     return {
       type: "set_alert",
       agent: "Alerts Agent",
       icon: "🔔",
-      content: `**Alert Setup — ${symbol}**\n\nI've identified the optimal alert level for **${symbol}**:\n\n• **Level:** ₹${price.toLocaleString("en-IN")} (${reason})\n• **Trigger:** Price crosses below this level\n• **Notification:** Chat message + toast\n• **Buffer:** ${buffer ? buffer + "% downside from current" : "active"}\n\nCurrently ${stock?.ltp ? `trading at ₹${stock.ltp.toLocaleString("en-IN")} — you have ₹${(stock.ltp - price).toLocaleString("en-IN")} of cushion.` : "monitoring active"}\n\nConfirm below and the watch loop will monitor this level actively.`,
+      content: `**Alert Setup — ${symbol} at ₹${price.toLocaleString("en-IN")}**
+
+I've configured the alert parameters for **${symbol}**:
+
+• **Trigger Price:** ₹${price.toLocaleString("en-IN")} (${reason})
+• **Current Market Price:** ₹${currentPrice.toLocaleString("en-IN")}
+• **Downside Buffer:** ₹${Math.abs(diff).toFixed(2)} (${Math.abs(bufferPct)}% ${diff >= 0 ? "below current" : "above current"})
+• **Condition:** Price crosses ${diff >= 0 ? "below" : "above"} trigger
+• **Delivery:** Instant chat notification + desktop toast
+
+Confirm below and the autonomous watch loop will monitor this level in real time.`,
       sources: ["NSE India"],
       disclaimer: false,
       nextMoves: [
-        { label: "✅ Set alert @ ₹" + price.toLocaleString("en-IN"), action: "proposeAlert", symbol, price, direction: "below", reason, autoOpen: true },
-        { label: "📋 Add to watchlist too", action: "proposeWatchlist", symbol },
-        { label: "📄 Paper order first", action: "proposePaperOrder", symbol, price: stock?.ltp || price, qty: Math.floor(5000 / (stock?.ltp || price)) || 1 },
+        { label: "✅ Set alert @ ₹" + price.toLocaleString("en-IN"), action: "proposeAlert", symbol, price, direction: diff >= 0 ? "below" : "above", reason, autoOpen: true },
+        { label: `📄 Paper buy ${paperQty} sh @ ₹${currentPrice.toLocaleString("en-IN")} (₹${(paperQty * currentPrice).toLocaleString("en-IN", {maximumFractionDigits:0})})`, action: "proposePaperOrder", symbol, price: currentPrice, qty: paperQty, side: "BUY" },
+        { label: "📋 Add " + symbol + " to watchlist", action: "proposeWatchlist", symbol },
+        { label: "📤 Share alert setup", action: "proposeShareCard", title: `${symbol} Alert Setup`, summary: `Alert level ₹${price.toLocaleString("en-IN")} · Buffer: ${Math.abs(bufferPct)}% from CMP ₹${currentPrice.toLocaleString("en-IN")}` },
       ],
     };
   },
@@ -380,40 +574,81 @@ const AgentEngine = {
   resultsPrepResponse(query, stock, md, mem) {
     if (!stock) stock = window.ZEBU_DATA.STOCKS["HDFCBANK"];
     const inPortfolio = mem.holdingsFocus?.includes(stock.symbol);
-    const holdingValue = inPortfolio ? (35 * stock.ltp) : 0;
-    const atRisk = inPortfolio ? Math.round(stock.ltp * 0.03 * 35) : 0;
+    const holdingValue = inPortfolio ? (45 * stock.ltp) : 0;
+    const atRisk = inPortfolio ? Math.round(stock.ltp * 0.04 * 45) : 0;
 
     return {
       type: "results_prep",
       agent: "Results Day Agent",
       icon: "📊",
-      openScreen: { view: "research", symbol: stock.symbol },
-      content: `**Results Day Prep — ${stock.name} Q2**\n\n**Key numbers the market is watching:**\n• Net Interest Margin (NIM): Expected ~4.2% (prev 4.1%)\n• Credit growth: Expected ~18% YoY\n• Slippage ratio: Market nervous about this\n• Net profit guidance\n\n**Current setup:**\nCMP ₹${stock.ltp.toLocaleString("en-IN")} · RSI ${stock.technicals.rsi14} · IV elevated (options pricing ±3% move)\n\n**Scenarios:**\n🟢 Beat → Target ₹${stock.technicals.resistance.toLocaleString("en-IN")} (+${((stock.technicals.resistance - stock.ltp) / stock.ltp * 100).toFixed(1)}%)\n🔴 Miss → Risk ₹${stock.technicals.support.toLocaleString("en-IN")} (-${((stock.ltp - stock.technicals.support) / stock.ltp * 100).toFixed(1)}%)\n\n**Your position:** ${inPortfolio ? `35 shares @ avg ₹1,540 → current value ₹${holdingValue.toLocaleString("en-IN")}\n⚠️ At-risk if results miss: **-₹${atRisk.toLocaleString("en-IN")}**` : "No direct position — watching"}\n\n**Action:** Set alerts both sides to capture the move, direction-agnostic.`,
-      sources: ["NSE India", "HDFC Bank investor relations"],
+      content: `**Results Day Prep — ${stock.name} Q2 (Today at 4 PM)**
+
+**Key Numbers Market Is Watching:**
+• Net Interest Margin (NIM): Expected ~4.2% (prev 4.1%)
+• Credit Growth: Expected ~18% YoY · PAT Consensus: ₹16,800 Cr
+• Implied Volatility: Elevated at 24 (options pricing ±4% move)
+
+**Current Setup & Scenarios:**
+CMP ₹${stock.ltp.toLocaleString("en-IN")} · RSI ${stock.technicals.rsi14}
+🟢 Beat → Target **₹${stock.technicals.resistance.toLocaleString("en-IN")}** (+${((stock.technicals.resistance - stock.ltp) / stock.ltp * 100).toFixed(1)}%)
+🔴 Miss → Risk **₹${stock.technicals.support.toLocaleString("en-IN")}** (-${((stock.ltp - stock.technicals.support) / stock.ltp * 100).toFixed(1)}%)
+
+**Your Book Impact:**
+You hold 45 shares (value ₹${holdingValue.toLocaleString("en-IN")}).
+Estimated move variance: **±₹${atRisk.toLocaleString("en-IN")}** at 4 PM.`,
+      sources: ["NSE India", "HDFC Bank Investor Relations"],
       disclaimer: true,
       nextMoves: [
-        { label: "🟢 Alert if beats ₹" + stock.technicals.resistance, action: "proposeAlert", symbol: stock.symbol, price: stock.technicals.resistance, direction: "above", reason: "Results beat breakout" },
-        { label: "🔴 Stop if misses ₹" + stock.technicals.support, action: "proposeAlert", symbol: stock.symbol, price: stock.technicals.support, direction: "below", reason: "Results miss protection" },
-        { label: "📄 Paper trade 5 shares", action: "proposePaperOrder", symbol: stock.symbol, price: stock.ltp, qty: 5 },
-        { label: "📤 Share prep card", action: "proposeShareCard", title: `${stock.symbol} Results Prep`, summary: `Beat → ₹${stock.technicals.resistance} · Miss → ₹${stock.technicals.support} · Options pricing ±3% move` },
+        { label: "🟢 Alert beat @ ₹" + stock.technicals.resistance, action: "proposeAlert", symbol: stock.symbol, price: stock.technicals.resistance, direction: "above", reason: "Results beat breakout" },
+        { label: "🔴 Stop miss @ ₹" + stock.technicals.support, action: "proposeAlert", symbol: stock.symbol, price: stock.technicals.support, direction: "below", reason: "Results miss protection" },
+        { label: "📄 Paper trade 5 shares @ ₹" + stock.ltp, action: "proposePaperOrder", symbol: stock.symbol, price: stock.ltp, qty: 5, side: "BUY" },
+        { label: "📤 Share results prep", action: "proposeShareCard", title: `${stock.symbol} Results Prep`, summary: `Beat target ₹${stock.technicals.resistance} · Miss risk ₹${stock.technicals.support} · Options pricing ±4%` },
       ],
     };
   },
 
   educationResponse(query, concept, md) {
+    const conceptKey = this.extractConcept(query) || "rsi";
+    let moves = [];
+
+    if (conceptKey === "rsi") {
+      moves = [
+        { label: "🔔 Alert TCS when RSI < 40 (₹4,050)", action: "proposeAlert", symbol: "TCS", price: 4050, direction: "below", reason: "RSI oversold entry trigger" },
+        { label: "📄 Paper buy 2 TCS @ RSI 44.2 (₹8,225)", action: "proposePaperOrder", symbol: "TCS", price: 4112.35, qty: 2, side: "BUY" },
+        { label: "📋 Add TCS to watchlist", action: "proposeWatchlist", symbol: "TCS" },
+        { label: "📤 Share RSI concept card", action: "proposeShareCard", title: "RSI In Today's Market", summary: "TCS RSI 44.2 · Approaching oversold 40 · Support ₹4,080" },
+      ];
+    } else if (conceptKey === "pe") {
+      moves = [
+        { label: "📄 Paper buy 5 Tata Motors @ P/E 8.2x (₹4,875)", action: "proposePaperOrder", symbol: "TATAMOTORS", price: 975, qty: 5, side: "BUY" },
+        { label: "🔔 Alert Tata Motors breakout @ ₹1,020", action: "proposeAlert", symbol: "TATAMOTORS", price: 1020, direction: "above", reason: "Value rerating breakout" },
+        { label: "📋 Add TATAMOTORS to watchlist", action: "proposeWatchlist", symbol: "TATAMOTORS" },
+        { label: "📤 Share P/E lesson card", action: "proposeShareCard", title: "P/E Ratio Analysis", summary: "Tata Motors P/E 8.2x vs Sector 14.1x · Value setup" },
+      ];
+    } else if (conceptKey === "vix") {
+      moves = [
+        { label: "🔔 Alert NIFTY support @ ₹24,200", action: "proposeAlert", symbol: "NIFTY50", price: 24200, direction: "below", reason: "VIX spike support level" },
+        { label: "📄 Paper buy 50 GOLDBEES (₹2,443 Hedge)", action: "proposePaperOrder", symbol: "GOLDBEES", price: 48.87, qty: 50, side: "BUY" },
+        { label: "📋 Add NIFTY50 to watchlist", action: "proposeWatchlist", symbol: "NIFTY50" },
+        { label: "📤 Share VIX briefing", action: "proposeShareCard", title: "India VIX Spike", summary: "VIX +9.13% to 14.82 · Hedging demand elevated" },
+      ];
+    } else {
+      moves = [
+        { label: "🔔 Set alert on key setup", action: "proposeAlert", symbol: "TCS", price: 4080, direction: "below", reason: "Concept level trigger" },
+        { label: "📄 Paper buy 2 shares TCS (₹8,225)", action: "proposePaperOrder", symbol: "TCS", price: 4112.35, qty: 2, side: "BUY" },
+        { label: "🏦 Open real account (₹20/order)", action: "proposeKYC" },
+        { label: "📤 Share lesson card", action: "proposeShareCard", title: concept.term, summary: concept.shortDef },
+      ];
+    }
+
     return {
       type: "education",
       agent: "AI Financial Mentor",
       icon: "🎓",
-      openScreen: { view: "education" },
-      content: `**${concept.term}**\n\n*${concept.shortDef}*\n\n${concept.explanation}\n\n**Live market context right now:** ${concept.currentExample}\n\n**Take action:** Use this knowledge to set a smarter alert or paper trade.`,
-      sources: ["Financial education KB", "NSE India"],
+      content: `**${concept.term}**\n\n*${concept.shortDef}*\n\n${concept.explanation}\n\n**Live Market Context Right Now:**\n> 📊 **${concept.currentExample}**\n\n**Outcome in Numbers:** Put this lesson to work immediately via paper trade or price alert below:`,
+      sources: ["Financial Education KB", "NSE India"],
       disclaimer: false,
-      nextMoves: [
-        { label: "📊 See this in today's market", action: "chat", query: `Show me ${concept.term} in today's market data` },
-        { label: "🔍 Use it to pick a stock", action: "chat", query: `Use ${concept.term} to find a setup in TCS or Reliance` },
-        { label: "🏦 Open real account", action: "proposeKYC" },
-      ],
+      nextMoves: moves,
     };
   },
 
@@ -422,14 +657,14 @@ const AgentEngine = {
       type: "education",
       agent: "AI Financial Mentor",
       icon: "🎓",
-      content: `I can explain any financial concept using today's Indian market as a live example.\n\n**Try:** *"What is RSI?"*, *"Explain P/E ratio"*, *"What is FII/DII?"*, *"What does PCR mean?"*, *"Explain MACD"*\n\n**Or** research a stock, set an alert, or stress-test your portfolio — all from chat.`,
+      content: `I explain financial concepts using live Indian market numbers rather than textbook theory.\n\n**Try asking:**\n• *"Explain RSI in today's market"* (TCS RSI is 44.2)\n• *"What is P/E ratio?"* (Tata Motors at 8.2x vs sector 14x)\n• *"Explain India VIX"* (Spiking +9.1% to 14.82)\n• *"What is FII/DII?"* (FII sold ₹2,340 Cr, DII bought ₹1,230 Cr)\n\nEvery lesson ends with a measurable action (paper order, alert, or watchlist).`,
       sources: [],
       disclaimer: false,
       nextMoves: [
-        { label: "🎓 Explain RSI", action: "chat", query: "What is RSI and what is it saying today?" },
-        { label: "🎓 What is FII?", action: "chat", query: "What is FII and DII and why does it matter?" },
-        { label: "🔍 Analyse TCS now", action: "chat", query: "Analyse TCS" },
-        { label: "🏦 Open real account", action: "proposeKYC" },
+        { label: "🎓 Learn RSI today (TCS RSI 44.2)", action: "chat", query: "Explain RSI in today's market" },
+        { label: "🎓 Learn P/E (Tata Motors 8.2x)", action: "chat", query: "Explain P/E ratio" },
+        { label: "📄 Paper buy 2 TCS @ ₹4,112 (Mock action)", action: "proposePaperOrder", symbol: "TCS", price: 4112.35, qty: 2, side: "BUY" },
+        { label: "🏦 Open real account (KYC)", action: "proposeKYC" },
       ],
     };
   },

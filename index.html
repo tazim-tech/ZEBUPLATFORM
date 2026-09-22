@@ -47,6 +47,10 @@
       MARKET OPEN
     </div>
     <div class="topbar-time" id="clock">09:30:00 IST</div>
+    <button id="topbar-nav-toggle" class="nav-toggle-btn" title="Hide/Show Navigation (Alt+N)" onclick="App.toggleNav()">
+      <span class="nav-toggle-icon">◀</span>
+      <span class="nav-toggle-text">Hide Nav</span>
+    </button>
     <button id="theme-toggle" class="theme-toggle-btn" title="Toggle Light / Dark mode" onclick="App.toggleTheme()">
       <span class="theme-icon">🌙</span>
       <span class="theme-label">Dark</span>
@@ -80,14 +84,15 @@
           <div class="chat-name">ZEBU AI</div>
           <div class="chat-status">
             <div class="dot"></div>
-            Market-aware · Always watching
+            Market-aware · Autonomous agent
           </div>
         </div>
       </div>
       <div class="chat-header-actions">
+        <button class="chat-hdr-btn" id="agent-focus-btn" title="Toggle Agent Focus Mode (Alt+F)" onclick="App.toggleAgentFocus()">⛶</button>
+        <button class="chat-hdr-btn" id="chat-nav-toggle" title="Toggle Navigation (Alt+N)" onclick="App.toggleNav()">◀ Nav</button>
         <button class="chat-hdr-btn" id="memory-btn" title="Agent Memory" onclick="App.showMemory()">🧠</button>
         <button class="chat-hdr-btn" title="Clear chat" onclick="App.clearChat()">🗑</button>
-        <button class="chat-hdr-btn" id="sidebar-toggle-btn" title="Toggle screen panel" onclick="App.toggleSidebar()">⬜</button>
       </div>
     </div>
 
@@ -98,18 +103,18 @@
     <div class="chat-input-area">
       <!-- Job Suggestion Pills -->
       <div class="chat-suggestions" id="chat-suggestions">
+        <div class="suggestion-pill" onclick="App.chatAsk('Research TCS')">🔍 Research TCS</div>
+        <div class="suggestion-pill" onclick="App.chatAsk('Fix my portfolio risk')">⚡ Fix portfolio risk</div>
+        <div class="suggestion-pill" onclick="App.chatAsk('Set alert on TCS at ₹4,080')">🔔 Set TCS alert</div>
+        <div class="suggestion-pill" onclick="App.chatAsk('Explain RSI in today\'s market')">🎓 Learn RSI today</div>
+        <div class="suggestion-pill" onclick="App.chatAsk('Paper buy 2 TCS shares')">📄 Paper buy 2 TCS</div>
         <div class="suggestion-pill" onclick="App.chatAsk('What\'s the market verdict for today?')">📊 Market brief</div>
-        <div class="suggestion-pill" onclick="App.chatAsk('Stress-test my portfolio with a 3% Nifty fall')">⚡ Stress-test portfolio</div>
-        <div class="suggestion-pill" onclick="App.chatAsk('Prep me for HDFC Bank results today')">📊 HDFC results prep</div>
-        <div class="suggestion-pill" onclick="App.chatAsk('Set an alert on TCS at support')">🔔 Set TCS alert</div>
-        <div class="suggestion-pill" onclick="App.chatAsk('Explain what RSI means in today\'s market')">🎓 Explain RSI</div>
-        <div class="suggestion-pill" onclick="App.chatAsk('Open an account with ZEBU')">🏦 Open account</div>
       </div>
 
       <div class="chat-input-row">
         <textarea
           id="chat-input"
-          placeholder="Research a stock, set an alert, stress-test your portfolio…"
+          placeholder="Research a stock, fix risk, set alert, learn an idea, take mock action…"
           rows="1"
         ></textarea>
         <button id="chat-send" title="Send (Enter)">
@@ -131,8 +136,17 @@
   <!-- ══ RIGHT: SCREEN PANEL (Agent opens this) ══ -->
   <div id="screen-panel">
 
+    <!-- Floating button to show nav when hidden -->
+    <button id="floating-nav-btn" class="floating-nav-toggle" onclick="App.toggleNav()" title="Show Navigation (Alt+N)">
+      <span>▶ Nav</span>
+    </button>
+
     <!-- Sidebar Navigation (secondary — agent can launch without it) -->
     <nav id="sidebar">
+      <div class="sidebar-collapse-trigger" onclick="App.toggleNav()" title="Hide navigation (Alt+N)">
+        <span class="sidebar-collapse-icon">◀</span>
+        <span class="sidebar-collapse-text">Hide</span>
+      </div>
       <div class="nav-item active" data-view="home" title="Market Brief">
         <div class="nav-icon">📊</div>
         <div class="nav-label">Brief</div>
