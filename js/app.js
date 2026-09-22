@@ -1,4 +1,4 @@
-// ZEBU AI — Main Application Controller
+// ZEBU AI — Main Application Controller v2 (Agent-First)
 
 const App = {
   currentView: "home",
@@ -6,10 +6,11 @@ const App = {
   chatHistory: [],
   alertCount: 0,
   clockInterval: null,
+  _pendingAction: null,       // action waiting for confirm modal
+  _sidebarCollapsed: false,
 
   init() {
     this.initTheme();
-    this.initChatToggle();
     this.renderTopbarIndices();
     this.renderTicker();
     this.startClock();
@@ -20,8 +21,12 @@ const App = {
     this.renderEventsView();
     this.renderEducationView();
     this.initChat();
-    this.scheduleMockAlerts();
+    AgentMemory.incrementSession();
+    AgentMonitor.start();
     this.navigate("home");
+    // Auto-expand textarea
+    const ta = document.getElementById("chat-input");
+    if (ta) ta.addEventListener("input", () => { ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight, 120) + "px"; });
   },
 
   // ── Theme Management ──────────────────────────────────────
@@ -51,55 +56,12 @@ const App = {
     this.setTheme(next, true);
   },
 
-  // ── Chat Panel Visibility Toggle (Hideable AI) ───────────
-  initChatToggle() {
-    const isHidden = localStorage.getItem("zebu_chat_hidden") === "true";
-    this.setChatVisible(!isHidden, false);
-
-    // Keyboard shortcut: Ctrl+J or Cmd+J
-    window.addEventListener("keydown", (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "j") {
-        e.preventDefault();
-        this.toggleChat();
-      }
-    });
-  },
-
-  isChatVisible() {
-    return !document.body.classList.contains("chat-hidden");
-  },
-
-  toggleChat() {
-    this.setChatVisible(!this.isChatVisible(), true);
-  },
-
-  showChat(notify = false) {
-    this.setChatVisible(true, notify);
-  },
-
-  hideChat(notify = false) {
-    this.setChatVisible(false, notify);
-  },
-
-  setChatVisible(visible, notify = false) {
-    if (visible) {
-      document.body.classList.remove("chat-hidden");
-      localStorage.setItem("zebu_chat_hidden", "false");
-    } else {
-      document.body.classList.add("chat-hidden");
-      localStorage.setItem("zebu_chat_hidden", "true");
-    }
-
-    // Update topbar pill state
-    const topbarBtn = document.getElementById("topbar-chat-toggle");
-    if (topbarBtn) {
-      topbarBtn.classList.toggle("active", visible);
-      topbarBtn.setAttribute("title", visible ? "Hide AI Assistant (Ctrl+J)" : "Show AI Assistant (Ctrl+J)");
-    }
-
-    if (notify) {
-      this.showToast(visible ? "AI Assistant visible" : "AI Assistant hidden (Click Ask AI or press Ctrl+J to open)", "info-toast");
-    }
+  // ── Sidebar toggle ───────────────────────────────────────
+  toggleSidebar() {
+    this._sidebarCollapsed = !this._sidebarCollapsed;
+    document.getElementById("screen-panel")?.classList.toggle("sidebar-collapsed", this._sidebarCollapsed);
+    const btn = document.getElementById("sidebar-toggle-btn");
+    if (btn) btn.title = this._sidebarCollapsed ? "Show screen panel" : "Collapse screen panel";
   },
 
   // ── Navigation ────────────────────────────────────────────
@@ -1180,27 +1142,43 @@ const App = {
   },
 
   // ══════════════════════════════════════════════════════════
-  //  CHAT SYSTEM
+  //  CHAT SYSTEM — Agent-First v2
   // ══════════════════════════════════════════════════════════
   initChat() {
     const input = document.getElementById("chat-input");
     const sendBtn = document.getElementById("chat-send");
+    const mem = AgentMemory.get();
+    const isReturning = mem.sessionCount > 1;
+    const md = ZEBU_DATA.MARKET_DATA;
+    const p = ZEBU_DATA.USER_PORTFOLIO;
 
-    // Welcome message
+    // Agent-first opening: live market judgment + book impact + 2-3 next moves
+    const greeting = isReturning
+      ? `**Welcome back, Rahul.** Here's what changed since you were last here:`
+      : `**Good ${this._timeGreeting()}.** I've already analysed the market and your book. Here's the live verdict:`;
+
     this.addMessage("ai", {
-      type: "text",
+      type: "market_brief",
       agent: "ZEBU AI Orchestrator",
       icon: "🤖",
-      content: `**Good evening.** I've found **4 developments** in the Indian market relevant to your portfolio.
+      content: `${greeting}
 
-• ⚠️ **HDFC Bank** Q2 results in ~6 hours — you hold 35 shares (avg ₹1,540)
-• 📉 **Infosys** broke 200-day EMA — your 25 shares affected (-₹534 today)
-• 💸 **Tata Steel** ex-dividend tomorrow — ₹540 credit (150 shares × ₹3.60)
-• 🔔 Energy & Oil is your largest sector at 28% — Crude oil down 0.43% today
+**Market: Cautiously Bullish · Selective Longs**
+NIFTY at ₹${md.indices.nifty50.ltp.toLocaleString("en-IN")} (▼ ${Math.abs(md.indices.nifty50.changePct).toFixed(2)}%) · FIIs sold ₹${Math.abs(md.fiiDii.fii.net).toFixed(0)} Cr · DIIs cushioning at ₹${md.fiiDii.dii.net.toFixed(0)} Cr
 
-Ask me anything, or click any card to explore.`,
+**Your book today:**
+• ⚠️ **HDFC Bank Q2 results in ~6h** — you hold 35 shares (avg ₹1,540). Options pricing ±3% move.
+• 📉 **TCS** testing 200-day EMA — you hold 50 shares, IT sector down 1.87% today
+• 💸 **Tata Steel** ex-dividend tomorrow — ₹540 credit expected (150 × ₹3.60)
+
+Tell me a job and I'll run it end-to-end.`,
       sources: ["NSE India", "ZEBU Portfolio API"],
       disclaimer: false,
+      nextMoves: [
+        { label: "📊 Full market verdict", action: "chat", query: "What's the market verdict for today?" },
+        { label: "⚡ Stress-test my portfolio", action: "chat", query: "Stress-test my portfolio" },
+        { label: "📊 Prep for HDFC results", action: "chat", query: "Prep me for HDFC Bank results today" },
+      ],
     });
 
     input?.addEventListener("keydown", e => {
@@ -1212,8 +1190,15 @@ Ask me anything, or click any card to explore.`,
     sendBtn?.addEventListener("click", () => this.sendChat());
   },
 
+  _timeGreeting() {
+    const h = new Date().getHours();
+    if (h < 12) return "morning";
+    if (h < 17) return "afternoon";
+    if (h < 20) return "evening";
+    return "night";
+  },
+
   chatAsk(query) {
-    this.showChat();
     const input = document.getElementById("chat-input");
     if (input) {
       input.value = query;
@@ -1226,20 +1211,63 @@ Ask me anything, or click any card to explore.`,
     const query = input?.value?.trim();
     if (!query) return;
     input.value = "";
+    input.style.height = "auto";
+
+    // Hide suggestions after first message
+    const sugg = document.getElementById("chat-suggestions");
+    if (sugg) sugg.style.display = "none";
 
     this.addMessage("user", { content: query });
-    const typingId = this.addTyping();
+
+    // Show tool-use steps before the answer
+    const steps = AgentEngine.getToolSteps(query);
+    const toolId = this.addToolUse(steps);
 
     try {
       const response = await AgentEngine.generateResponse(query);
-      this.removeTyping(typingId);
+      this.removeTyping(toolId);
+
+      // If response says open a screen, do it
+      if (response.openScreen) {
+        const { view, symbol } = response.openScreen;
+        if (symbol && this.renderStockView) this.renderStockView(symbol);
+        this.navigate(view);
+      }
+
       this.addMessage("ai", response);
     } catch (err) {
-      this.removeTyping(typingId);
-      this.addMessage("ai", { type: "text", agent: "ZEBU AI", icon: "🤖", content: "I encountered an issue processing your request. Please try again." });
+      this.removeTyping(toolId);
+      this.addMessage("ai", { type: "text", agent: "ZEBU AI", icon: "🤖", content: "I encountered an issue. Please try again." });
     }
   },
 
+  // ── Tool Use Animation ─────────────────────────────────────
+  addToolUse(steps) {
+    const container = document.getElementById("chat-messages");
+    const id = "tool-" + Date.now();
+    const div = document.createElement("div");
+    div.className = "chat-msg ai tool-use-msg";
+    div.id = id;
+
+    div.innerHTML = `
+      <div class="msg-avatar">🤖</div>
+      <div class="tool-use-bubble">
+        <div class="tool-use-steps" id="tool-steps-${id}">
+          ${steps.map((s, i) => `<div class="tool-step" style="animation-delay:${s.delay}ms">⚙ using <strong>${s.label}</strong>…</div>`).join("")}
+        </div>
+        <div class="tool-done-label">✓ Done — compiling answer</div>
+      </div>`;
+
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+    return id;
+  },
+
+  removeTyping(id) {
+    document.getElementById(id)?.remove();
+  },
+
+  // ── Message Renderer ───────────────────────────────────────
   addMessage(role, data) {
     const container = document.getElementById("chat-messages");
     if (!container) return;
@@ -1252,7 +1280,7 @@ Ask me anything, or click any card to explore.`,
     if (role === "user") {
       div.innerHTML = `
         <div class="msg-avatar user-av">RS</div>
-        <div class="msg-bubble">${this.escapeHtml(data.content)}</div>`;
+        <div class="msg-bubble user-bubble">${this.escapeHtml(data.content)}</div>`;
     } else {
       const content = this.renderMarkdown(data.content || "");
       const sources = data.sources?.length ? `
@@ -1260,18 +1288,28 @@ Ask me anything, or click any card to explore.`,
           ${data.sources.map(s => `<span class="source-chip">📍 ${s}</span>`).join("")}
         </div>` : "";
       const disclaimer = data.disclaimer ? `
-        <div class="msg-disclaimer">
-          ⚠️ For informational purposes only. Not SEBI-registered investment advice.
+        <div class="msg-disclaimer">⚠️ Informational only. Not SEBI-registered advice.</div>` : "";
+
+      // Next move pills — every response must have them
+      const nextMoves = data.nextMoves?.length ? `
+        <div class="next-moves">
+          <div class="next-moves-label">Next move:</div>
+          <div class="next-moves-pills">
+            ${data.nextMoves.map((m, i) => `
+              <button class="next-move-pill" id="nm-${id}-${i}" onclick="App.runNextMove(${JSON.stringify(m).replace(/"/g, '&quot;')})">${m.label}</button>
+            `).join("")}
+          </div>
         </div>` : "";
 
       div.innerHTML = `
         <div class="msg-avatar">🤖</div>
-        <div>
+        <div class="msg-content-wrap">
           <div class="msg-agent-tag">${data.icon || "🤖"} ${data.agent || "ZEBU AI"}</div>
           <div class="msg-bubble">
             ${content}
             ${sources}
             ${disclaimer}
+            ${nextMoves}
           </div>
         </div>`;
     }
@@ -1281,31 +1319,269 @@ Ask me anything, or click any card to explore.`,
     return id;
   },
 
-  addTyping() {
+  // ── Watch Loop Message (different style — monitoring alert) ─
+  addWatchMessage(alert) {
     const container = document.getElementById("chat-messages");
-    const id = "typing-" + Date.now();
+    if (!container) return;
+
     const div = document.createElement("div");
-    div.className = "chat-msg ai";
-    div.id = id;
-    div.innerHTML = `
-      <div class="msg-avatar">🤖</div>
-      <div class="typing-indicator">
-        <div class="typing-dots">
-          <div class="typing-dot"></div>
-          <div class="typing-dot"></div>
-          <div class="typing-dot"></div>
+    div.className = "chat-msg ai watch-msg";
+
+    const nextMoves = alert.nextMoves?.length ? `
+      <div class="next-moves">
+        <div class="next-moves-label">Action:</div>
+        <div class="next-moves-pills">
+          ${alert.nextMoves.map((m, i) => `
+            <button class="next-move-pill" onclick="App.runNextMove(${JSON.stringify(m).replace(/"/g, '&quot;')})">${m.label}</button>
+          `).join("")}
         </div>
-        <span class="thinking-label">Analysing markets...</span>
+      </div>` : "";
+
+    div.innerHTML = `
+      <div class="msg-avatar watch-avatar">🔔</div>
+      <div class="msg-content-wrap">
+        <div class="msg-agent-tag watch-tag">🔔 Watch Loop · ${alert.symbol}</div>
+        <div class="msg-bubble watch-bubble">
+          <div class="watch-title">${alert.title}</div>
+          <div class="watch-detail">${this.renderMarkdown(alert.detail)}</div>
+          ${nextMoves}
+        </div>
       </div>`;
+
     container.appendChild(div);
     container.scrollTop = container.scrollHeight;
-    return id;
   },
 
-  removeTyping(id) {
-    document.getElementById(id)?.remove();
+  // ── Next Move Dispatcher ───────────────────────────────────
+  runNextMove(move) {
+    const { action } = move;
+    if (action === "chat") {
+      this.chatAsk(move.query);
+    } else if (action === "openScreen") {
+      if (move.symbol) this.renderStockView(move.symbol);
+      this.navigate(move.view || "home");
+    } else if (action === "proposeAlert") {
+      this.proposeAlert(move.symbol, move.price, move.direction || "below", move.reason || "", move.autoOpen);
+    } else if (action === "proposeWatchlist") {
+      this.proposeWatchlist(move.symbol);
+    } else if (action === "proposePaperOrder") {
+      this.proposePaperOrder(move.symbol, move.price, move.qty);
+    } else if (action === "proposeKYC") {
+      this.proposeKYC();
+    }
   },
 
+  // ── Action Proposals → Confirm Modal ──────────────────────
+  proposeAlert(symbol, price, direction = "below", reason = "", autoOpen = false) {
+    this._pendingAction = { type: "alert", symbol, price, direction, reason };
+    document.getElementById("modal-agent-label").textContent = "🔔 Alert Agent proposes";
+    document.getElementById("modal-title").textContent = `Set Price Alert — ${symbol}`;
+    document.getElementById("modal-body").innerHTML = `
+      <div class="modal-detail-row"><span class="modal-label">Stock / Index</span><span class="modal-val">${symbol}</span></div>
+      <div class="modal-detail-row"><span class="modal-label">Trigger price</span><span class="modal-val">₹${price.toLocaleString("en-IN")}</span></div>
+      <div class="modal-detail-row"><span class="modal-label">Direction</span><span class="modal-val">${direction === "below" ? "▼ Falls below" : "▲ Rises above"}</span></div>
+      <div class="modal-detail-row"><span class="modal-label">Reason</span><span class="modal-val">${reason}</span></div>
+      <div class="modal-detail-row"><span class="modal-label">Notification</span><span class="modal-val">Chat message + toast</span></div>`;
+    document.getElementById("modal-confirm-btn").textContent = "✅ Set Alert";
+    this.openConfirmModal();
+  },
+
+  proposeWatchlist(symbol) {
+    this._pendingAction = { type: "watchlist", symbol };
+    document.getElementById("modal-agent-label").textContent = "📋 Portfolio Agent proposes";
+    document.getElementById("modal-title").textContent = `Add to Watchlist — ${symbol}`;
+    document.getElementById("modal-body").innerHTML = `
+      <div class="modal-detail-row"><span class="modal-label">Symbol</span><span class="modal-val">${symbol}</span></div>
+      <div class="modal-detail-row"><span class="modal-label">Action</span><span class="modal-val">Add to your watchlist</span></div>
+      <div class="modal-detail-row"><span class="modal-label">Monitor</span><span class="modal-val">Agent will watch for setups</span></div>`;
+    document.getElementById("modal-confirm-btn").textContent = "📋 Add to Watchlist";
+    this.openConfirmModal();
+  },
+
+  proposePaperOrder(symbol, price, qty) {
+    const stock = ZEBU_DATA.STOCKS[symbol];
+    const total = (price * qty).toLocaleString("en-IN", { maximumFractionDigits: 0 });
+    this._pendingAction = { type: "paper_order", symbol, price, qty, total };
+    document.getElementById("modal-agent-label").textContent = "📄 Trade Agent proposes";
+    document.getElementById("modal-title").textContent = `Paper Order — ${symbol}`;
+    document.getElementById("modal-body").innerHTML = `
+      <div class="modal-demo-note">📄 Paper trade only — no real order placed</div>
+      <div class="modal-detail-row"><span class="modal-label">Stock</span><span class="modal-val">${stock?.name || symbol}</span></div>
+      <div class="modal-detail-row"><span class="modal-label">Action</span><span class="modal-val">BUY</span></div>
+      <div class="modal-detail-row"><span class="modal-label">Qty</span><span class="modal-val">${qty} shares</span></div>
+      <div class="modal-detail-row"><span class="modal-label">Price</span><span class="modal-val">₹${price.toLocaleString("en-IN")} (CMP)</span></div>
+      <div class="modal-detail-row"><span class="modal-label">Total</span><span class="modal-val">≈ ₹${total}</span></div>`;
+    document.getElementById("modal-confirm-btn").textContent = "📄 Place Paper Order";
+    this.openConfirmModal();
+  },
+
+  proposeKYC() {
+    this._pendingAction = { type: "kyc" };
+    document.getElementById("modal-agent-label").textContent = "🏦 ZEBU Onboarding proposes";
+    document.getElementById("modal-title").textContent = "Start Account Opening";
+    document.getElementById("modal-body").innerHTML = `
+      <div class="modal-detail-row"><span class="modal-label">Broker</span><span class="modal-val">Zebu Share & Wealth Managements Pvt. Ltd.</span></div>
+      <div class="modal-detail-row"><span class="modal-label">SEBI Reg</span><span class="modal-val">INZ000273636</span></div>
+      <div class="modal-detail-row"><span class="modal-label">Time</span><span class="modal-val">~5 minutes with Aadhaar + PAN</span></div>
+      <div class="modal-detail-row"><span class="modal-label">Brokerage</span><span class="modal-val">₹20 flat per order</span></div>`;
+    document.getElementById("modal-confirm-btn").textContent = "🏦 Start KYC";
+    this.openConfirmModal();
+  },
+
+  openConfirmModal() {
+    const modal = document.getElementById("confirm-modal");
+    if (modal) { modal.style.display = "flex"; document.body.style.overflow = "hidden"; }
+  },
+
+  closeConfirmModal(e) {
+    if (e && e.target !== document.getElementById("confirm-modal")) return;
+    document.getElementById("confirm-modal").style.display = "none";
+    document.body.style.overflow = "";
+    this._pendingAction = null;
+  },
+
+  confirmModalAction() {
+    const action = this._pendingAction;
+    if (!action) return;
+    document.getElementById("confirm-modal").style.display = "none";
+    document.body.style.overflow = "";
+
+    if (action.type === "alert") {
+      AgentMemory.addAlert(action);
+      const badge = document.getElementById("alerts-badge");
+      if (badge) badge.textContent = parseInt(badge.textContent || "0") + 1;
+      this.addMessage("ai", {
+        type: "confirm",
+        agent: "Alerts Agent",
+        icon: "🔔",
+        content: `✅ **Alert set** — I'll message you when **${action.symbol}** ${action.direction === "below" ? "falls below" : "rises above"} ₹${action.price.toLocaleString("en-IN")}.
+
+*${action.reason}*
+
+The watch loop is now actively monitoring this level.`,
+        sources: [],
+        disclaimer: false,
+        nextMoves: [
+          { label: "📋 Add to watchlist too", action: "proposeWatchlist", symbol: action.symbol },
+          { label: "📊 See all alerts", action: "openScreen", view: "events" },
+        ],
+      });
+      this.showToast(`🔔 Alert set: ${action.symbol} ${action.direction === "below" ? "<" : ">"} ₹${action.price.toLocaleString("en-IN")}`, "alert-toast");
+    } else if (action.type === "watchlist") {
+      AgentMemory.addWatchlist(action.symbol);
+      this.addMessage("ai", {
+        type: "confirm",
+        agent: "Portfolio Agent",
+        icon: "📋",
+        content: `✅ **${action.symbol} added to watchlist.** I'll surface setups on this stock in future briefs.
+
+You now have ${AgentMemory.get().watchlist.length} stocks on watchlist.`,
+        sources: [],
+        disclaimer: false,
+        nextMoves: [
+          { label: "🔔 Set price alert", action: "proposeAlert", symbol: action.symbol, price: ZEBU_DATA.STOCKS[action.symbol]?.technicals?.support || 0, direction: "below", reason: "Watchlist support" },
+        ],
+      });
+      this.showToast(`📋 ${action.symbol} added to watchlist`, "info-toast");
+    } else if (action.type === "paper_order") {
+      AgentMemory.addPaperOrder(action);
+      this.addMessage("ai", {
+        type: "confirm",
+        agent: "Trade Agent",
+        icon: "📄",
+        content: `📄 **Paper order placed** — BUY ${action.qty} × ${action.symbol} @ ₹${action.price.toLocaleString("en-IN")}
+
+Total value: ≈ ₹${action.total}
+
+*This is a paper trade (demo mode). No real order was placed.*
+
+I'll track this position's P&L in future portfolio messages.`,
+        sources: [],
+        disclaimer: false,
+        nextMoves: [
+          { label: "🔔 Set stop-loss alert", action: "proposeAlert", symbol: action.symbol, price: Math.round(action.price * 0.97), direction: "below", reason: "Paper trade stop-loss (3%)" },
+          { label: "💼 See portfolio", action: "openScreen", view: "portfolio" },
+        ],
+      });
+      this.showToast(`📄 Paper order: BUY ${action.qty} ${action.symbol} @ ₹${action.price.toLocaleString("en-IN")}`, "info-toast");
+    } else if (action.type === "kyc") {
+      AgentMemory.startKYC();
+      this.addMessage("ai", {
+        type: "confirm",
+        agent: "ZEBU Onboarding",
+        icon: "🏦",
+        content: `🏦 **KYC started** — In production this would open the Zebu account opening flow.
+
+You'd need:
+• PAN card
+• Aadhaar (for e-KYC)
+• Bank account details
+• ~5 minutes
+
+*This is a demo — no actual account is being opened.*`,
+        sources: ["Zebu Share and Wealth Managements Pvt. Ltd."],
+        disclaimer: false,
+        nextMoves: [],
+      });
+      this.showToast("🏦 KYC flow initiated (demo)", "info-toast");
+    }
+
+    this._pendingAction = null;
+  },
+
+  // ── Memory Panel ──────────────────────────────────────────
+  showMemory() {
+    const mem = AgentMemory.get();
+    document.getElementById("memory-panel-body").innerHTML = `
+      <div class="memory-grid">
+        <div class="memory-item">
+          <div class="memory-label">Risk style</div>
+          <div class="memory-val">${mem.riskStyle.charAt(0).toUpperCase() + mem.riskStyle.slice(1)}</div>
+        </div>
+        <div class="memory-item">
+          <div class="memory-label">Sessions</div>
+          <div class="memory-val">${mem.sessionCount}</div>
+        </div>
+        <div class="memory-item">
+          <div class="memory-label">Watchlist</div>
+          <div class="memory-val">${mem.watchlist.length ? mem.watchlist.join(", ") : "Empty"}</div>
+        </div>
+        <div class="memory-item">
+          <div class="memory-label">Alerts set</div>
+          <div class="memory-val">${mem.alertsSet.length}</div>
+        </div>
+        <div class="memory-item">
+          <div class="memory-label">Paper orders</div>
+          <div class="memory-val">${mem.paperOrders.length}</div>
+        </div>
+        <div class="memory-item">
+          <div class="memory-label">Concepts learned</div>
+          <div class="memory-val">${mem.preferredConcepts.length ? mem.preferredConcepts.join(", ") : "None yet"}</div>
+        </div>
+      </div>
+      ${mem.lastQueries.length ? `
+      <div class="memory-section-label">Recent queries</div>
+      <div class="memory-queries">
+        ${mem.lastQueries.map(q => `<div class="memory-query" onclick="App.closeMemoryPanel();App.chatAsk('${q.replace(/'/g, "'")}')">${q}</div>`).join("")}
+      </div>` : ""}`;;
+    document.getElementById("memory-panel").style.display = "flex";
+    document.body.style.overflow = "hidden";
+  },
+
+  closeMemoryPanel(e) {
+    if (e && e.target !== document.getElementById("memory-panel")) return;
+    document.getElementById("memory-panel").style.display = "none";
+    document.body.style.overflow = "";
+  },
+
+  clearChat() {
+    document.getElementById("chat-messages").innerHTML = "";
+    const sugg = document.getElementById("chat-suggestions");
+    if (sugg) sugg.style.display = "flex";
+    this.initChat();
+  },
+
+  // ── Markdown renderer ─────────────────────────────────────
   renderMarkdown(text) {
     return text
       .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
@@ -1324,30 +1600,15 @@ Ask me anything, or click any card to explore.`,
     return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   },
 
-  // ── Mock Alerts ───────────────────────────────────────────
-  scheduleMockAlerts() {
-    // Fire a mock push alert after 8 seconds
-    setTimeout(() => {
-      this.showToast("🔔 IRCTC: Volume 4.2x average — approaching ₹900 resistance", "alert-toast");
-    }, 8000);
-
-    setTimeout(() => {
-      this.showToast("📊 HDFC Bank: Options IV rising ahead of Q2 results", "info-toast");
-    }, 20000);
-  },
-
+  // ── Toast ─────────────────────────────────────────────────
   showToast(msg, cls = "info-toast") {
     const container = document.getElementById("toast-container");
     const toast = document.createElement("div");
     toast.className = `toast ${cls}`;
-    toast.innerHTML = `<span>${msg}</span>`;
+    toast.innerHTML = `<span>${msg}</span><span class="toast-close" onclick="this.parentElement.remove()">✕</span>`;
     toast.style.cursor = "pointer";
-    toast.onclick = () => {
-      this.chatAsk(msg.replace(/^[^:]+: /, "Explain: "));
-      toast.remove();
-    };
     container?.appendChild(toast);
-    setTimeout(() => toast.remove(), 6000);
+    setTimeout(() => toast.remove(), 7000);
   },
 };
 
